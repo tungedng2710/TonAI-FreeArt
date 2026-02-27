@@ -148,7 +148,7 @@ body {
   display: grid;
   gap: 18px;
   grid-template-columns: 1fr 1.25fr;
-  align-items: stretch;
+  align-items: start;
 }
 
 /* ── CARD ────────────────────────────────────────────────────────────── */
@@ -507,10 +507,12 @@ textarea { min-height: 90px; resize: vertical; }
 .output-card {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 .output-card .preview-grid {
   flex: 1;
   min-height: 400px;
+  max-height: 800px;
 }
 .out-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -601,10 +603,14 @@ textarea { min-height: 90px; resize: vertical; }
   align-items: center;
   justify-content: center;
   min-height: 0;
+  max-height: 100%;
+  aspect-ratio: 1;
 }
 .img-tile img {
-  max-width: 100%; max-height: 100%;
-  width: 100%; height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   display: block;
   object-fit: contain;
   border-radius: 8px;
@@ -682,9 +688,10 @@ textarea { min-height: 90px; resize: vertical; }
 /* ── RESPONSIVE ──────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
-  .preview-grid { min-height: 300px; }
+  .preview-grid { min-height: 300px; max-height: 700px; }
   .preview-grid.cols-2 { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 480px) {
   .navbar-inner, .wrap, .footer { width: 94vw; }
+  .preview-grid { min-height: 250px; max-height: 600px; }
 }
