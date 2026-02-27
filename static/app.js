@@ -54,7 +54,7 @@ const RATIOS = {
 // ── THEME ────────────────────────────────────────────────────────────
 (function initTheme() {
   const saved = localStorage.getItem("tonai_theme");
-  const preferred = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  const preferred = "dark"; // Default to dark theme
   document.documentElement.setAttribute("data-theme", saved || preferred);
 })();
 
