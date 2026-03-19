@@ -280,7 +280,7 @@ async function generate() {
   const baseSeed = Number($("seed").value);
   const basePayload = {
     prompt:              promptEl.value.trim(),
-    negative_prompt:     $("negative_prompt").value,
+    negative_prompt:     "",
     width:               Number(widthInput.value),
     height:              Number(heightInput.value),
     num_inference_steps: Number($("steps").value),

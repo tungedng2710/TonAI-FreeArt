@@ -40,7 +40,7 @@
     <div class="grid">
 
       <!-- LEFT: main controls -->
-      <section class="card" aria-label="Image settings">
+      <section class="card settings-card" aria-label="Image settings">
         <div class="field-group">
           <div class="label-row">
             <label for="prompt">Prompt</label>
@@ -81,7 +81,7 @@
           </select>
         </div>
 
-        <div class="row">
+        <div class="row" style="display:none">
           <div class="field-group">
             <label for="width">Width <span class="label-hint">px</span></label>
             <input id="width" type="number" min="256" max="1536" step="16" value="1024" />
@@ -93,42 +93,17 @@
         </div>
 
         <div class="field-group">
-          <label>Number of Images</label>
-          <div class="count-grid">
-            <button class="count-btn active" data-count="1">1</button>
-            <button class="count-btn" data-count="2">2</button>
-            <button class="count-btn" data-count="3">3</button>
-            <button class="count-btn" data-count="4">4</button>
-          </div>
-        </div>
-
-        <button id="generate" class="btn-generate">
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          Generate Image
-          <kbd class="kbd-hint">Ctrl+↵</kbd>
-        </button>
-        <div id="status" class="status" role="status" aria-live="polite"></div>
-      </section>
-
-      <!-- MIDDLE: advanced settings -->
-      <section class="card advanced-card" aria-label="Advanced settings">
-        <div class="out-head">
-          <strong class="out-title">Advanced Settings</strong>
-        </div>
-
-        <div class="field-group">
-          <label for="negative_prompt">Negative Prompt <span class="label-hint">optional</span></label>
-          <textarea id="negative_prompt" placeholder="blurry, low quality, watermark, deformed..."></textarea>
-        </div>
-
-        <div class="field-group">
           <label for="model">Model</label>
           <select id="model" class="model-select">
             <option value="Z-Image-Turbo" selected>Z-Image-Turbo</option>
           </select>
         </div>
 
-        <div class="row">
+        <div class="row row-3">
+          <div class="field-group">
+            <label for="seed">Seed <span class="label-hint">−1 = random</span></label>
+            <input id="seed" type="number" step="1" value="-1" />
+          </div>
           <div class="field-group">
             <label for="steps">Steps <span class="label-hint">1–30</span></label>
             <input id="steps" type="number" min="1" max="30" step="1" value="9" />
@@ -139,10 +114,12 @@
           </div>
         </div>
 
-        <div class="field-group">
-          <label for="seed">Seed <span class="label-hint">−1 for random</span></label>
-          <input id="seed" type="number" step="1" value="-1" />
-        </div>
+        <button id="generate" class="btn-generate">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Generate Image
+          <kbd class="kbd-hint">Ctrl+↵</kbd>
+        </button>
+        <div id="status" class="status" role="status" aria-live="polite"></div>
       </section>
 
       <!-- RIGHT: output -->

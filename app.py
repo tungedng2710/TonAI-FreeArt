@@ -106,6 +106,8 @@ def _run_generation(req: GenerateRequest):
     return image, seed
 
 
+DEBUG_MODE = False
+
 app = FastAPI(title="TonAI Image Generator API", version="1.0.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
