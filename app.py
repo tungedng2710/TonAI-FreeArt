@@ -67,7 +67,8 @@ def get_pipeline(model_name: str = "Z-Image-Turbo") -> DiffusionPipeline:
     
     # Map friendly names to model IDs
     model_map = {
-        "Z-Image-Turbo": "Tongyi-MAI/Z-Image-Turbo"
+        "Z-Image-Turbo": "Tongyi-MAI/Z-Image-Turbo",
+        "FLUX.2-klein-9B": "black-forest-labs/FLUX.2-klein-9B",
     }
     
     model_id = model_map.get(model_name, "Tongyi-MAI/Z-Image-Turbo")
