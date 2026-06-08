@@ -5,6 +5,7 @@ Author: https://tungedng2710.github.io/
 """
 
 import base64
+import inspect
 import io
 import threading
 from pathlib import Path
@@ -81,6 +82,35 @@ def get_pipeline(model_name: str = "Z-Image-Turbo") -> DiffusionPipeline:
     return _PIPELINE
 
 
+def _pipeline_supports_arg(pipe: DiffusionPipeline, arg_name: str) -> bool:
+    try:
+        parameters = inspect.signature(pipe.__call__).parameters
+    except (TypeError, ValueError):
+        return True
+
+    return arg_name in parameters or any(
+        parameter.kind == inspect.Parameter.VAR_KEYWORD
+        for parameter in parameters.values()
+    )
+
+
+def _build_generation_kwargs(req: GenerateRequest, pipe: DiffusionPipeline, generator):
+    kwargs = {
+        "prompt": req.prompt.strip(),
+        "width": int(req.width),
+        "height": int(req.height),
+        "num_inference_steps": int(req.num_inference_steps),
+        "guidance_scale": float(req.guidance_scale),
+        "generator": generator,
+    }
+
+    negative_prompt = req.negative_prompt.strip() if req.negative_prompt else ""
+    if negative_prompt and _pipeline_supports_arg(pipe, "negative_prompt"):
+        kwargs["negative_prompt"] = negative_prompt
+
+    return kwargs
+
+
 def _run_generation(req: GenerateRequest):
     if not req.prompt or not req.prompt.strip():
         raise HTTPException(status_code=422, detail="Prompt is required.")
@@ -93,16 +123,9 @@ def _run_generation(req: GenerateRequest):
     generator = torch.Generator(device=gen_device).manual_seed(seed)
 
     pipe = get_pipeline(req.model)
+    kwargs = _build_generation_kwargs(req, pipe, generator)
     with _INFERENCE_LOCK:
-        image = pipe(
-            prompt=req.prompt.strip(),
-            negative_prompt=req.negative_prompt.strip() if req.negative_prompt else None,
-            width=int(req.width),
-            height=int(req.height),
-            num_inference_steps=int(req.num_inference_steps),
-            guidance_scale=float(req.guidance_scale),
-            generator=generator,
-        ).images[0]
+        image = pipe(**kwargs).images[0]
 
     return image, seed
 
