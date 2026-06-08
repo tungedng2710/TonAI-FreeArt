@@ -5,6 +5,7 @@ Author: https://tungedng2710.github.io/
 """
 
 import base64
+import gc
 import inspect
 import io
 import threading
@@ -49,6 +50,14 @@ def _build_pipeline(model_id: str) -> DiffusionPipeline:
     if torch.cuda.is_available():
         # Prefer bf16 on newer GPUs, fallback to fp16.
         dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+        if _is_flux2_model(model_id):
+            pipe = DiffusionPipeline.from_pretrained(model_id, torch_dtype=dtype)
+            if hasattr(pipe, "enable_model_cpu_offload"):
+                pipe.enable_model_cpu_offload()
+            else:
+                pipe.to("cuda")
+            return pipe
+
         return DiffusionPipeline.from_pretrained(
             model_id,
             torch_dtype=dtype,
@@ -61,6 +70,26 @@ def _build_pipeline(model_id: str) -> DiffusionPipeline:
     )
     pipe.to("cpu")
     return pipe
+
+
+def _is_flux2_model(model_id: str) -> bool:
+    return "FLUX.2" in model_id.upper()
+
+
+def _release_pipeline() -> None:
+    global _PIPELINE, _CURRENT_MODEL
+
+    if _PIPELINE is None:
+        return
+
+    old_pipeline = _PIPELINE
+    _PIPELINE = None
+    _CURRENT_MODEL = None
+    del old_pipeline
+    gc.collect()
+
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
 
 def get_pipeline(model_name: str = "Z-Image-Turbo") -> DiffusionPipeline:
@@ -77,6 +106,7 @@ def get_pipeline(model_name: str = "Z-Image-Turbo") -> DiffusionPipeline:
     with _PIPELINE_LOCK:
         # Rebuild pipeline if model changed
         if _PIPELINE is None or _CURRENT_MODEL != model_id:
+            _release_pipeline()
             _PIPELINE = _build_pipeline(model_id)
             _CURRENT_MODEL = model_id
     return _PIPELINE
