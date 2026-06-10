@@ -1,0 +1,216 @@
+"""
+TonAI image generation engine.
+
+This module is independent from the FastAPI app. It can be imported by any
+caller, or run directly from the command line to generate one image.
+"""
+
+import argparse
+import gc
+import inspect
+import threading
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import torch
+from diffusers import DiffusionPipeline
+
+DEFAULT_MODEL_NAME = "Z-Image-Turbo"
+DEFAULT_MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
+MODEL_MAP = {
+    "Z-Image-Turbo": DEFAULT_MODEL_ID,
+    "FLUX.2-klein-9B": "black-forest-labs/FLUX.2-klein-9B",
+}
+
+
+@dataclass
+class ImageGenerationRequest:
+    prompt: str
+    negative_prompt: str = ""
+    width: int = 1024
+    height: int = 1024
+    num_inference_steps: int = 9
+    guidance_scale: float = 0.0
+    seed: int = 42
+    model: str = DEFAULT_MODEL_NAME
+
+
+@dataclass
+class ImageGenerationResult:
+    image: Any
+    seed: int
+    model_id: str
+
+
+class ImageGenerationEngine:
+    def __init__(self) -> None:
+        self._pipeline = None
+        self._current_model = None
+        self._pipeline_lock = threading.Lock()
+        self._inference_lock = threading.Lock()
+
+    @property
+    def current_model(self) -> str:
+        return self._current_model or DEFAULT_MODEL_ID
+
+    @property
+    def cuda_available(self) -> bool:
+        return torch.cuda.is_available()
+
+    def generate(self, req: ImageGenerationRequest) -> ImageGenerationResult:
+        if not req.prompt or not req.prompt.strip():
+            raise ValueError("Prompt is required.")
+
+        seed = self._resolve_seed(req.seed)
+        generator = torch.Generator(device=self._generator_device()).manual_seed(seed)
+        pipe = self.get_pipeline(req.model)
+        kwargs = self._build_generation_kwargs(req, pipe, generator)
+
+        with self._inference_lock:
+            image = pipe(**kwargs).images[0]
+
+        return ImageGenerationResult(
+            image=image,
+            seed=seed,
+            model_id=self.current_model,
+        )
+
+    def get_pipeline(self, model_name: str = DEFAULT_MODEL_NAME) -> DiffusionPipeline:
+        model_id = self.resolve_model_id(model_name)
+
+        with self._pipeline_lock:
+            if self._pipeline is None or self._current_model != model_id:
+                self.release()
+                self._pipeline = self._build_pipeline(model_id)
+                self._current_model = model_id
+        return self._pipeline
+
+    def release(self) -> None:
+        if self._pipeline is None:
+            return
+
+        old_pipeline = self._pipeline
+        self._pipeline = None
+        self._current_model = None
+        del old_pipeline
+        gc.collect()
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    @staticmethod
+    def resolve_model_id(model_name: str) -> str:
+        return MODEL_MAP.get(model_name, DEFAULT_MODEL_ID)
+
+    @staticmethod
+    def _is_flux2_model(model_id: str) -> bool:
+        return "FLUX.2" in model_id.upper()
+
+    @staticmethod
+    def _resolve_seed(seed: int) -> int:
+        seed = int(seed)
+        if seed < 0:
+            return int(torch.seed() % (2**31 - 1))
+        return seed
+
+    @staticmethod
+    def _generator_device() -> str:
+        return "cuda" if torch.cuda.is_available() else "cpu"
+
+    def _build_pipeline(self, model_id: str) -> DiffusionPipeline:
+        if torch.cuda.is_available():
+            dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+            if self._is_flux2_model(model_id):
+                pipe = DiffusionPipeline.from_pretrained(model_id, torch_dtype=dtype)
+                if hasattr(pipe, "enable_model_cpu_offload"):
+                    pipe.enable_model_cpu_offload()
+                else:
+                    pipe.to("cuda")
+                return pipe
+
+            return DiffusionPipeline.from_pretrained(
+                model_id,
+                torch_dtype=dtype,
+                device_map="balanced",
+            )
+
+        pipe = DiffusionPipeline.from_pretrained(
+            model_id,
+            torch_dtype=torch.float32,
+        )
+        pipe.to("cpu")
+        return pipe
+
+    def _build_generation_kwargs(
+        self,
+        req: ImageGenerationRequest,
+        pipe: DiffusionPipeline,
+        generator,
+    ) -> dict[str, Any]:
+        kwargs = {
+            "prompt": req.prompt.strip(),
+            "width": int(req.width),
+            "height": int(req.height),
+            "num_inference_steps": int(req.num_inference_steps),
+            "guidance_scale": float(req.guidance_scale),
+            "generator": generator,
+        }
+
+        negative_prompt = req.negative_prompt.strip() if req.negative_prompt else ""
+        if negative_prompt and self._pipeline_supports_arg(pipe, "negative_prompt"):
+            kwargs["negative_prompt"] = negative_prompt
+
+        return kwargs
+
+    @staticmethod
+    def _pipeline_supports_arg(pipe: DiffusionPipeline, arg_name: str) -> bool:
+        try:
+            parameters = inspect.signature(pipe.__call__).parameters
+        except (TypeError, ValueError):
+            return True
+
+        return arg_name in parameters or any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters.values()
+        )
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run the TonAI generation engine.")
+    parser.add_argument("--prompt", required=True, help="Text prompt to generate from.")
+    parser.add_argument("--negative-prompt", default="", help="Optional negative prompt.")
+    parser.add_argument("--model", default=DEFAULT_MODEL_NAME, choices=sorted(MODEL_MAP))
+    parser.add_argument("--width", type=int, default=1024)
+    parser.add_argument("--height", type=int, default=1024)
+    parser.add_argument("--steps", type=int, default=9)
+    parser.add_argument("--guidance", type=float, default=0.0)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--output", default="output.png", help="Path to write the PNG.")
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = _parse_args()
+    engine = ImageGenerationEngine()
+    result = engine.generate(
+        ImageGenerationRequest(
+            prompt=args.prompt,
+            negative_prompt=args.negative_prompt,
+            width=args.width,
+            height=args.height,
+            num_inference_steps=args.steps,
+            guidance_scale=args.guidance,
+            seed=args.seed,
+            model=args.model,
+        )
+    )
+
+    output = Path(args.output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    result.image.save(output, format="PNG")
+    print(f"Saved {output} with seed {result.seed} using {result.model_id}")
+
+
+if __name__ == "__main__":
+    main()
