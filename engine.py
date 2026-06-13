@@ -8,6 +8,7 @@ caller, or run directly from the command line to generate one image.
 import argparse
 import gc
 import inspect
+import os
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,6 +22,15 @@ DEFAULT_MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_MAP = {
     "Z-Image-Turbo": DEFAULT_MODEL_ID,
     "FLUX.2-klein-9B": "black-forest-labs/FLUX.2-klein-9B",
+}
+MODEL_MIN_GPU_MEMORY_GIB = {
+    DEFAULT_MODEL_ID: 24,
+    MODEL_MAP["FLUX.2-klein-9B"]: 50,
+}
+MODEL_CPU_OFFLOAD = os.getenv("TONAI_MODEL_CPU_OFFLOAD", "").lower() in {
+    "1",
+    "true",
+    "yes",
 }
 
 
@@ -104,10 +114,6 @@ class ImageGenerationEngine:
         return MODEL_MAP.get(model_name, DEFAULT_MODEL_ID)
 
     @staticmethod
-    def _is_flux2_model(model_id: str) -> bool:
-        return "FLUX.2" in model_id.upper()
-
-    @staticmethod
     def _resolve_seed(seed: int) -> int:
         seed = int(seed)
         if seed < 0:
@@ -121,19 +127,19 @@ class ImageGenerationEngine:
     def _build_pipeline(self, model_id: str) -> DiffusionPipeline:
         if torch.cuda.is_available():
             dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-            if self._is_flux2_model(model_id):
-                pipe = DiffusionPipeline.from_pretrained(model_id, torch_dtype=dtype)
+            pipe = DiffusionPipeline.from_pretrained(
+                model_id,
+                torch_dtype=dtype,
+            )
+            if self._should_cpu_offload(model_id):
                 if hasattr(pipe, "enable_model_cpu_offload"):
                     pipe.enable_model_cpu_offload()
                 else:
-                    pipe.to("cuda")
+                    pipe.enable_sequential_cpu_offload()
                 return pipe
 
-            return DiffusionPipeline.from_pretrained(
-                model_id,
-                torch_dtype=dtype,
-                device_map="balanced",
-            )
+            pipe.to("cuda")
+            return pipe
 
         pipe = DiffusionPipeline.from_pretrained(
             model_id,
@@ -141,6 +147,19 @@ class ImageGenerationEngine:
         )
         pipe.to("cpu")
         return pipe
+
+    @classmethod
+    def _should_cpu_offload(cls, model_id: str) -> bool:
+        if MODEL_CPU_OFFLOAD:
+            return True
+
+        required_gib = MODEL_MIN_GPU_MEMORY_GIB.get(model_id, 24)
+        return cls._gpu_memory_gib() < required_gib
+
+    @staticmethod
+    def _gpu_memory_gib() -> int:
+        _, total_bytes = torch.cuda.mem_get_info()
+        return round(total_bytes / (1024**3))
 
     def _build_generation_kwargs(
         self,
