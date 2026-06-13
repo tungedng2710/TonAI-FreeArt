@@ -9,16 +9,11 @@ const clearBtn       = $("clear-btn");
 const widthInput     = $("width");
 const heightInput    = $("height");
 const aspectSelect   = $("aspect_ratio_preset");
-const progressWrap   = $("progress-wrap");
-const progressFill   = $("progress-fill");
-const progressText   = $("progress-text");
 const promptEl       = $("prompt");
 const promptCounter  = $("prompt-counter");
 const themeToggle    = $("theme-toggle");
 const toastContainer = $("toast-container");
 
-let progressTimer  = null;
-let progressValue  = 0;
 let generatedTiles = [];   // { blob, seed }[]
 
 // ── CONSTANTS ────────────────────────────────────────────────────────
@@ -164,32 +159,6 @@ fetch("/static/prompts.json")
   })
   .catch((err) => console.error("Failed to load example prompts:", err));
 
-
-
-// ── PROGRESS ─────────────────────────────────────────────────────────
-function updateProgress(v) {
-  progressValue = Math.max(0, Math.min(100, v));
-  progressFill.style.width = progressValue + "%";
-  progressText.textContent = Math.round(progressValue) + "%";
-}
-function startProgress(stepCount) {
-  if (progressTimer) clearInterval(progressTimer);
-  progressWrap.style.display = "block";
-  updateProgress(2);
-  const steps = Math.max(1, Number(stepCount) || 9);
-  const estimatedMs = Math.max(8000, steps * 900);
-  const increment = (92 - 2) / ((estimatedMs / 200));
-  progressTimer = setInterval(() => {
-    updateProgress(Math.min(92, progressValue + increment));
-  }, 200);
-}
-function finishProgress(success) {
-  if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
-  if (!success) { progressWrap.style.display = "none"; updateProgress(0); return; }
-  updateProgress(100);
-  setTimeout(() => { progressWrap.style.display = "none"; updateProgress(0); }, 450);
-}
-
 // ── DOWNLOAD HELPERS ─────────────────────────────────────────────────
 function downloadBlob(blob, seed) {
   const url  = URL.createObjectURL(blob);
@@ -303,9 +272,7 @@ async function generate() {
   btn.disabled = true;
   const label = activeCount > 1 ? `Generating ${activeCount} images…` : "Generating…";
   setStatus(label);
-  startProgress(basePayload.num_inference_steps);
 
-  let anySuccess = false;
   try {
     const results = await Promise.allSettled(
       seeds.map((seed) => fetchImage({ ...basePayload, seed }))
@@ -322,7 +289,6 @@ async function generate() {
       renderTiles(tiles);
       downloadBtn.disabled = false;
       clearBtn.disabled    = false;
-      anySuccess = true;
     }
 
     if (errors.length > 0 && tiles.length === 0) {
@@ -343,7 +309,6 @@ async function generate() {
     setStatus(err.message || "Unexpected error.", "error");
     showToast(err.message || "Generation failed.", "error");
   } finally {
-    finishProgress(anySuccess);
     btn.disabled = false;
   }
 }
