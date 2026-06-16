@@ -62,12 +62,7 @@ const MODE_CONFIG = {
     action: "Edit Image",
     prompt: "Change the background to a dramatic studio scene while preserving the main subject",
     steps: 50,
-    examples: [
-      "Change the rabbit's color to purple, with a flash light background.",
-      "Replace the background with a clean product photography studio.",
-      "Make it look like a cinematic night scene with realistic lighting.",
-      "Turn the subject into a watercolor illustration while keeping composition.",
-    ],
+    examples: [],
   },
 };
 
@@ -163,6 +158,7 @@ function renderExamples() {
   const config = MODE_CONFIG[currentMode];
   const examples = currentMode === "text" ? textPromptExamples : config.examples;
   examplesEl.innerHTML = "";
+  examplesEl.classList.toggle("hidden", examples.length === 0);
 
   examples.slice(0, 4).forEach((promptText) => {
     const chip = document.createElement("button");
