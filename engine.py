@@ -22,10 +22,12 @@ DEFAULT_MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_MAP = {
     "Z-Image-Turbo": DEFAULT_MODEL_ID,
     "FLUX.2-klein-9B": "black-forest-labs/FLUX.2-klein-9B",
+    "FLUX.2-dev": "black-forest-labs/FLUX.2-dev",
 }
 MODEL_MIN_GPU_MEMORY_GIB = {
     DEFAULT_MODEL_ID: 24,
     MODEL_MAP["FLUX.2-klein-9B"]: 50,
+    MODEL_MAP["FLUX.2-dev"]: 50,
 }
 MODEL_CPU_OFFLOAD = os.getenv("TONAI_MODEL_CPU_OFFLOAD", "").lower() in {
     "1",

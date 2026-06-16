@@ -102,6 +102,7 @@ Interactive API documentation is available at:
 
 Currently supported models:
 - **Z-Image-Turbo** (Tongyi-MAI/Z-Image-Turbo): Fast, high-quality image generation
+- **FLUX.2-dev** (black-forest-labs/FLUX.2-dev)
 
 ## Performance Tips
 
