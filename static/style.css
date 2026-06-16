@@ -785,7 +785,18 @@ textarea { min-height: 90px; resize: vertical; }
 }
 @media (max-width: 480px) {
   .navbar-inner, .wrap, .footer { width: 94vw; }
+  .wrap { padding-top: 12px; }
+  .card { padding: 12px; }
+  .row,
+  .row-3,
+  .example-prompts { grid-template-columns: 1fr; }
+  .out-head,
+  .footer { flex-wrap: wrap; }
+  .out-tools { width: 100%; }
+  .btn-secondary { flex: 1; justify-content: center; padding-inline: 10px; }
+  .kbd-hint { display: none; }
   .output-card { height: 45vh; }
+  .preview-grid.cols-2 { grid-template-columns: 1fr; grid-template-rows: auto; overflow: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   body::before,
