@@ -19,15 +19,21 @@ from diffusers import DiffusionPipeline
 
 DEFAULT_MODEL_NAME = "Z-Image-Turbo"
 DEFAULT_MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
+DEFAULT_EDIT_MODEL_NAME = "Qwen-Image-Edit"
+DEFAULT_EDIT_MODEL_ID = "Qwen/Qwen-Image-Edit"
 MODEL_MAP = {
     "Z-Image-Turbo": DEFAULT_MODEL_ID,
     "FLUX.2-klein-9B": "black-forest-labs/FLUX.2-klein-9B",
     "FLUX.2-dev": "black-forest-labs/FLUX.2-dev",
 }
+EDIT_MODEL_MAP = {
+    DEFAULT_EDIT_MODEL_NAME: DEFAULT_EDIT_MODEL_ID,
+}
 MODEL_MIN_GPU_MEMORY_GIB = {
     DEFAULT_MODEL_ID: 24,
     MODEL_MAP["FLUX.2-klein-9B"]: 50,
     MODEL_MAP["FLUX.2-dev"]: 50,
+    DEFAULT_EDIT_MODEL_ID: 24,
 }
 MODEL_CPU_OFFLOAD = os.getenv("TONAI_MODEL_CPU_OFFLOAD", "").lower() in {
     "1",
@@ -49,6 +55,17 @@ class ImageGenerationRequest:
 
 
 @dataclass
+class ImageEditRequest:
+    image: Any
+    prompt: str
+    negative_prompt: str = " "
+    num_inference_steps: int = 50
+    true_cfg_scale: float = 4.0
+    seed: int = 42
+    model: str = DEFAULT_EDIT_MODEL_NAME
+
+
+@dataclass
 class ImageGenerationResult:
     image: Any
     seed: int
@@ -59,6 +76,7 @@ class ImageGenerationEngine:
     def __init__(self) -> None:
         self._pipeline = None
         self._current_model = None
+        self._pipeline_kind = None
         self._pipeline_lock = threading.Lock()
         self._inference_lock = threading.Lock()
 
@@ -80,7 +98,29 @@ class ImageGenerationEngine:
         kwargs = self._build_generation_kwargs(req, pipe, generator)
 
         with self._inference_lock:
-            image = pipe(**kwargs).images[0]
+            with torch.inference_mode():
+                image = pipe(**kwargs).images[0]
+
+        return ImageGenerationResult(
+            image=image,
+            seed=seed,
+            model_id=self.current_model,
+        )
+
+    def edit(self, req: ImageEditRequest) -> ImageGenerationResult:
+        if not req.prompt or not req.prompt.strip():
+            raise ValueError("Prompt is required.")
+        if req.image is None:
+            raise ValueError("Source image is required.")
+
+        seed = self._resolve_seed(req.seed)
+        generator = torch.manual_seed(seed)
+        pipe = self.get_edit_pipeline(req.model)
+        kwargs = self._build_edit_kwargs(req, pipe, generator)
+
+        with self._inference_lock:
+            with torch.inference_mode():
+                image = pipe(**kwargs).images[0]
 
         return ImageGenerationResult(
             image=image,
@@ -92,10 +132,30 @@ class ImageGenerationEngine:
         model_id = self.resolve_model_id(model_name)
 
         with self._pipeline_lock:
-            if self._pipeline is None or self._current_model != model_id:
+            if (
+                self._pipeline is None
+                or self._current_model != model_id
+                or self._pipeline_kind != "generation"
+            ):
                 self.release()
                 self._pipeline = self._build_pipeline(model_id)
                 self._current_model = model_id
+                self._pipeline_kind = "generation"
+        return self._pipeline
+
+    def get_edit_pipeline(self, model_name: str = DEFAULT_EDIT_MODEL_NAME):
+        model_id = self.resolve_edit_model_id(model_name)
+
+        with self._pipeline_lock:
+            if (
+                self._pipeline is None
+                or self._current_model != model_id
+                or self._pipeline_kind != "edit"
+            ):
+                self.release()
+                self._pipeline = self._build_edit_pipeline(model_id)
+                self._current_model = model_id
+                self._pipeline_kind = "edit"
         return self._pipeline
 
     def release(self) -> None:
@@ -105,6 +165,7 @@ class ImageGenerationEngine:
         old_pipeline = self._pipeline
         self._pipeline = None
         self._current_model = None
+        self._pipeline_kind = None
         del old_pipeline
         gc.collect()
 
@@ -114,6 +175,10 @@ class ImageGenerationEngine:
     @staticmethod
     def resolve_model_id(model_name: str) -> str:
         return MODEL_MAP.get(model_name, DEFAULT_MODEL_ID)
+
+    @staticmethod
+    def resolve_edit_model_id(model_name: str) -> str:
+        return EDIT_MODEL_MAP.get(model_name, DEFAULT_EDIT_MODEL_ID)
 
     @staticmethod
     def _resolve_seed(seed: int) -> int:
@@ -144,6 +209,38 @@ class ImageGenerationEngine:
             return pipe
 
         pipe = DiffusionPipeline.from_pretrained(
+            model_id,
+            torch_dtype=torch.float32,
+        )
+        pipe.to("cpu")
+        return pipe
+
+    def _build_edit_pipeline(self, model_id: str):
+        try:
+            from diffusers import QwenImageEditPipeline
+        except ImportError as exc:
+            raise ValueError(
+                "QwenImageEditPipeline is not available. Install the diffusers "
+                "version that includes Qwen image editing support."
+            ) from exc
+
+        if torch.cuda.is_available():
+            dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+            pipe = QwenImageEditPipeline.from_pretrained(
+                model_id,
+                torch_dtype=dtype,
+            )
+            if self._should_cpu_offload(model_id):
+                if hasattr(pipe, "enable_model_cpu_offload"):
+                    pipe.enable_model_cpu_offload()
+                else:
+                    pipe.enable_sequential_cpu_offload()
+                return pipe
+
+            pipe.to("cuda")
+            return pipe
+
+        pipe = QwenImageEditPipeline.from_pretrained(
             model_id,
             torch_dtype=torch.float32,
         )
@@ -181,6 +278,31 @@ class ImageGenerationEngine:
         negative_prompt = req.negative_prompt.strip() if req.negative_prompt else ""
         if negative_prompt and self._pipeline_supports_arg(pipe, "negative_prompt"):
             kwargs["negative_prompt"] = negative_prompt
+
+        return kwargs
+
+    def _build_edit_kwargs(
+        self,
+        req: ImageEditRequest,
+        pipe,
+        generator,
+    ) -> dict[str, Any]:
+        image = req.image.convert("RGB") if hasattr(req.image, "convert") else req.image
+        kwargs = {
+            "image": image,
+            "prompt": req.prompt.strip(),
+            "generator": generator,
+            "num_inference_steps": int(req.num_inference_steps),
+        }
+
+        negative_prompt = req.negative_prompt if req.negative_prompt is not None else " "
+        if self._pipeline_supports_arg(pipe, "negative_prompt"):
+            kwargs["negative_prompt"] = negative_prompt.strip() or " "
+
+        if self._pipeline_supports_arg(pipe, "true_cfg_scale"):
+            kwargs["true_cfg_scale"] = float(req.true_cfg_scale)
+        elif self._pipeline_supports_arg(pipe, "guidance_scale"):
+            kwargs["guidance_scale"] = float(req.true_cfg_scale)
 
         return kwargs
 

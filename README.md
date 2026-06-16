@@ -7,6 +7,7 @@ A fast and efficient AI-powered image generation API built with FastAPI and Diff
 ## Features
 
 - **Fast Image Generation**: Powered by Z-Image-Turbo diffusion model
+- **Image Editing**: Upload a source image and edit it with Qwen-Image-Edit
 - **RESTful API**: Easy-to-use API endpoints for integration
 - **Web Interface**: Built-in web UI for interactive image generation
 - **Flexible Configuration**: Customizable image dimensions, inference steps, and guidance
@@ -41,13 +42,13 @@ Run the FastAPI server:
 python app.py
 ```
 
-The server will start on `http://localhost:8000`
+The server will start on `http://localhost:7863`
 
 ### Web Interface
 
 Open your browser and navigate to:
 ```
-http://localhost:8000
+http://localhost:7863
 ```
 
 ### API Endpoints
@@ -79,11 +80,27 @@ Response:
 }
 ```
 
+#### Edit Image
+
+**POST** `/edit/image`
+
+Multipart form fields:
+
+- **image**: Source image file
+- **prompt**: Edit instruction
+- **negative_prompt**: Optional negative prompt
+- **num_inference_steps**: Default `50`
+- **true_cfg_scale**: Default `4.0`
+- **seed**: Random seed (`-1` for random)
+- **model**: Default `"Qwen-Image-Edit"`
+
+Returns a PNG image with the used seed in the `X-Used-Seed` response header.
+
 #### API Documentation
 
 Interactive API documentation is available at:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+- Swagger UI: `http://localhost:7863/docs`
+- ReDoc: `http://localhost:7863/redoc`
 
 ## Configuration
 
@@ -97,11 +114,13 @@ Interactive API documentation is available at:
 - **guidance_scale**: Classifier-free guidance scale (0.0-20.0)
 - **seed**: Random seed for reproducibility (-1 for random)
 - **model**: Model identifier (default: "Z-Image-Turbo")
+- **true_cfg_scale**: Qwen image editing guidance scale (0.0-20.0)
 
 ## Models
 
 Currently supported models:
 - **Z-Image-Turbo** (Tongyi-MAI/Z-Image-Turbo): Fast, high-quality image generation
+- **Qwen-Image-Edit** (Qwen/Qwen-Image-Edit): Image-to-image editing
 - **FLUX.2-dev** (black-forest-labs/FLUX.2-dev)
 
 ## Performance Tips

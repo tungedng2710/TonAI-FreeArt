@@ -1,54 +1,92 @@
-// ── ELEMENT REFS ─────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
 
-const statusEl       = $("status");
-const btn            = $("generate");
-const previewGrid    = $("preview-grid");
-const downloadBtn    = $("download-btn");
-const clearBtn       = $("clear-btn");
-const widthInput     = $("width");
-const heightInput    = $("height");
-const aspectSelect   = $("aspect_ratio_preset");
-const promptEl       = $("prompt");
-const promptCounter  = $("prompt-counter");
-const themeToggle    = $("theme-toggle");
+const statusEl = $("status");
+const generateBtn = $("generate");
+const generateLabel = $("generate-label");
+const previewGrid = $("preview-grid");
+const downloadBtn = $("download-btn");
+const clearBtn = $("clear-btn");
+const widthInput = $("width");
+const heightInput = $("height");
+const aspectSelect = $("aspect_ratio_preset");
+const promptEl = $("prompt");
+const promptCounter = $("prompt-counter");
+const themeToggle = $("theme-toggle");
 const toastContainer = $("toast-container");
+const sourceField = $("source-field");
+const sourceInput = $("source-image");
+const sourcePreview = $("source-preview");
+const uploadEmpty = $("upload-empty");
+const uploadZone = $("upload-zone");
+const removeSourceBtn = $("remove-source");
+const textSettings = $("text-settings");
+const editSettings = $("edit-settings");
+const guidanceField = $("guidance-field");
+const modeChip = $("mode-chip");
+const outputTitle = $("output-title");
+const outputSubtitle = $("output-subtitle");
+const examplesEl = document.querySelector(".example-prompts");
 
-let generatedTiles = [];   // { blob, seed }[]
+let currentMode = "text";
+let generatedTile = null;
+let sourceObjectUrl = "";
+let textPromptExamples = [];
 
-// ── CONSTANTS ────────────────────────────────────────────────────────
-const MANUAL_MIN  = 256;
-const PRESET_MIN  = 1024;
-const MAX_SIZE    = 1536;
-const STEP        = 16;
-
-const PLACEHOLDER_HTML = `
-  <div class="ph">
-    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="ph-icon">
-      <rect x="4" y="8" width="40" height="32" rx="4" stroke="currentColor" stroke-width="2"/>
-      <circle cx="16" cy="20" r="4" stroke="currentColor" stroke-width="2"/>
-      <path d="M4 34 l10-10 8 8 6-6 16 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <span>Your generated image will appear here.</span>
-    <small>Tip: press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to generate</small>
-  </div>`;
+const MANUAL_MIN = 256;
+const PRESET_MIN = 1024;
+const MAX_SIZE = 1536;
+const STEP = 16;
 
 const RATIOS = {
-  "1:1":  [1, 1],
-  "4:3":  [4, 3],
-  "3:4":  [3, 4],
+  "1:1": [1, 1],
+  "4:3": [4, 3],
+  "3:4": [3, 4],
   "16:9": [16, 9],
   "9:16": [9, 16],
-  "3:2":  [3, 2],
-  "2:3":  [2, 3],
+  "3:2": [3, 2],
+  "2:3": [2, 3],
 };
 
-// ── THEME ────────────────────────────────────────────────────────────
-(function initTheme() {
+const MODE_CONFIG = {
+  text: {
+    title: "Text to Image",
+    subtitle: "Generated image",
+    action: "Generate",
+    prompt: "A cinematic portrait of a jazz pianist in a small club, warm stage light, 35mm film grain",
+    steps: 9,
+    examples: [],
+  },
+  image: {
+    title: "Image to Image",
+    subtitle: "Edited image",
+    action: "Edit Image",
+    prompt: "Change the background to a dramatic studio scene while preserving the main subject",
+    steps: 50,
+    examples: [
+      "Change the rabbit's color to purple, with a flash light background.",
+      "Replace the background with a clean product photography studio.",
+      "Make it look like a cinematic night scene with realistic lighting.",
+      "Turn the subject into a watercolor illustration while keeping composition.",
+    ],
+  },
+};
+
+const PLACEHOLDER_HTML = `
+  <div class="placeholder">
+    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="placeholder-icon" aria-hidden="true">
+      <rect x="5" y="8" width="38" height="32" rx="4" stroke="currentColor" stroke-width="2"/>
+      <circle cx="17" cy="20" r="4" stroke="currentColor" stroke-width="2"/>
+      <path d="M6 35l10-10 8 8 6-6 12 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>No image yet</span>
+  </div>`;
+
+function initTheme() {
   const saved = localStorage.getItem("tonai_theme");
-  const preferred = "dark"; // Default to dark theme
-  document.documentElement.setAttribute("data-theme", saved || preferred);
-})();
+  document.documentElement.setAttribute("data-theme", saved || "dark");
+}
+
+initTheme();
 
 themeToggle.addEventListener("click", () => {
   const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
@@ -56,7 +94,6 @@ themeToggle.addEventListener("click", () => {
   localStorage.setItem("tonai_theme", next);
 });
 
-// ── TOAST ────────────────────────────────────────────────────────────
 function showToast(message, type = "default", duration = 3200) {
   const el = document.createElement("div");
   el.className = "toast" + (type !== "default" ? ` toast-${type}` : "");
@@ -70,13 +107,11 @@ function showToast(message, type = "default", duration = 3200) {
   }, duration);
 }
 
-// ── STATUS ───────────────────────────────────────────────────────────
-function setStatus(msg, type = "") {
-  statusEl.textContent = msg || "";
+function setStatus(message, type = "") {
+  statusEl.textContent = message || "";
   statusEl.className = "status" + (type ? ` ${type}` : "");
 }
 
-// ── SIZE HELPERS ─────────────────────────────────────────────────────
 function snap(value, minSize = MANUAL_MIN) {
   const clamped = Math.max(minSize, Math.min(MAX_SIZE, Math.round(Number(value))));
   return Math.max(minSize, Math.min(MAX_SIZE, Math.round(clamped / STEP) * STEP));
@@ -85,86 +120,175 @@ function snap(value, minSize = MANUAL_MIN) {
 function applyRatio(key) {
   const ratio = RATIOS[key];
   if (!ratio) return;
+
   const [rw, rh] = ratio;
   const fw = rw >= rh ? (PRESET_MIN * rw) / rh : PRESET_MIN;
   const fh = rw >= rh ? PRESET_MIN : (PRESET_MIN * rh) / rw;
-  widthInput.value  = String(snap(fw, PRESET_MIN));
+  widthInput.value = String(snap(fw, PRESET_MIN));
   heightInput.value = String(snap(fh, PRESET_MIN));
 }
 
-function normalizeInputs() {
-  widthInput.value  = String(snap(widthInput.value));
+function normalizeTextInputs() {
+  widthInput.value = String(snap(widthInput.value));
   heightInput.value = String(snap(heightInput.value));
 }
 
-// ── ASPECT RATIO BUTTONS ─────────────────────────────────────────────
-const ratioButtons = document.querySelectorAll(".ratio-btn");
-let activeRatio = "1:1";
-
-ratioButtons.forEach((b) => {
-  b.addEventListener("click", () => {
-    activeRatio = b.dataset.ratio;
-    ratioButtons.forEach((x) => x.classList.toggle("active", x.dataset.ratio === activeRatio));
+document.querySelectorAll(".ratio-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    const activeRatio = button.dataset.ratio;
+    document.querySelectorAll(".ratio-btn").forEach((item) => {
+      item.classList.toggle("active", item.dataset.ratio === activeRatio);
+    });
     aspectSelect.value = activeRatio;
     applyRatio(activeRatio);
   });
 });
 
-widthInput.addEventListener("change",  normalizeInputs);
-heightInput.addEventListener("change", normalizeInputs);
-
-// ── COUNT BUTTONS ─────────────────────────────────────────────────────
-const countButtons = document.querySelectorAll(".count-btn");
-let activeCount = 1;
-
-countButtons.forEach((b) => {
-  b.addEventListener("click", () => {
-    activeCount = Number(b.dataset.count);
-    countButtons.forEach((x) => x.classList.toggle("active", Number(x.dataset.count) === activeCount));
-  });
-});
-
-// ── PROMPT CHARACTER COUNTER ─────────────────────────────────────────
-const PROMPT_MAX = Number(promptEl.getAttribute("maxlength") || 500);
+widthInput.addEventListener("change", normalizeTextInputs);
+heightInput.addEventListener("change", normalizeTextInputs);
 
 function updateCounter() {
+  const max = Number(promptEl.getAttribute("maxlength") || 700);
   const len = promptEl.value.length;
-  promptCounter.textContent = `${len} / ${PROMPT_MAX}`;
+  promptCounter.textContent = `${len} / ${max}`;
   promptCounter.className =
-    len > PROMPT_MAX        ? "char-counter over" :
-    len > PROMPT_MAX * 0.85 ? "char-counter warn" :
-                              "char-counter";
+    len > max ? "char-counter over" :
+    len > max * 0.85 ? "char-counter warn" :
+    "char-counter";
 }
-promptEl.addEventListener("input", updateCounter);
-updateCounter();
 
-// ── EXAMPLE PROMPT CHIPS ─────────────────────────────────────────────
-// Load example prompts from external JSON file
+promptEl.addEventListener("input", updateCounter);
+
+function renderExamples() {
+  const config = MODE_CONFIG[currentMode];
+  const examples = currentMode === "text" ? textPromptExamples : config.examples;
+  examplesEl.innerHTML = "";
+
+  examples.slice(0, 4).forEach((promptText) => {
+    const chip = document.createElement("button");
+    chip.className = "example-chip";
+    chip.type = "button";
+    chip.textContent = promptText;
+    chip.addEventListener("click", () => {
+      promptEl.value = promptText;
+      updateCounter();
+      promptEl.focus();
+    });
+    examplesEl.appendChild(chip);
+  });
+}
+
 fetch("/static/prompts.json")
   .then((res) => res.json())
   .then((prompts) => {
-    const container = document.querySelector(".example-prompts");
-    prompts.forEach((promptText) => {
-      const chip = document.createElement("button");
-      chip.className = "ex-chip";
-      chip.type = "button";
-      chip.textContent = promptText;
-      chip.addEventListener("click", () => {
-        promptEl.value = promptText;
-        updateCounter();
-        promptEl.focus();
-      });
-      container.appendChild(chip);
-    });
+    textPromptExamples = Array.isArray(prompts) ? prompts : [];
+    MODE_CONFIG.text.examples = textPromptExamples;
+    renderExamples();
   })
-  .catch((err) => console.error("Failed to load example prompts:", err));
+  .catch(() => {
+    textPromptExamples = [
+      "Editorial fashion portrait in a minimalist studio, soft side lighting, crisp details",
+      "A wooden cabin beside a frozen alpine lake at sunrise, warm window light, mist",
+    ];
+    renderExamples();
+  });
 
-// ── DOWNLOAD HELPERS ─────────────────────────────────────────────────
+function setMode(mode) {
+  currentMode = mode;
+  const config = MODE_CONFIG[mode];
+
+  document.body.dataset.mode = mode;
+  document.querySelectorAll(".mode-tab").forEach((button) => {
+    const isActive = button.dataset.mode === mode;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+
+  sourceField.classList.toggle("hidden", mode !== "image");
+  textSettings.classList.toggle("hidden", mode !== "text");
+  editSettings.classList.toggle("hidden", mode !== "image");
+  guidanceField.classList.toggle("hidden", mode !== "text");
+
+  modeChip.textContent = config.title;
+  outputTitle.textContent = config.title;
+  outputSubtitle.textContent = config.subtitle;
+  generateLabel.textContent = config.action;
+  promptEl.placeholder = config.prompt;
+
+  $("steps").value = String(config.steps);
+  setStatus("");
+  renderExamples();
+}
+
+document.querySelectorAll(".mode-tab").forEach((button) => {
+  button.addEventListener("click", () => setMode(button.dataset.mode));
+});
+
+function resetSourcePreview() {
+  if (sourceObjectUrl) {
+    URL.revokeObjectURL(sourceObjectUrl);
+    sourceObjectUrl = "";
+  }
+  sourceInput.value = "";
+  sourcePreview.hidden = true;
+  sourcePreview.removeAttribute("src");
+  uploadEmpty.hidden = false;
+  uploadZone.classList.remove("has-source");
+  removeSourceBtn.disabled = true;
+}
+
+function setSourceFile(file) {
+  if (!file || !file.type.startsWith("image/")) {
+    showToast("Choose an image file.", "error");
+    return;
+  }
+
+  if (sourceObjectUrl) {
+    URL.revokeObjectURL(sourceObjectUrl);
+  }
+  sourceObjectUrl = URL.createObjectURL(file);
+  sourcePreview.src = sourceObjectUrl;
+  sourcePreview.hidden = false;
+  uploadEmpty.hidden = true;
+  uploadZone.classList.add("has-source");
+  removeSourceBtn.disabled = false;
+}
+
+sourceInput.addEventListener("change", () => {
+  setSourceFile(sourceInput.files?.[0]);
+});
+
+removeSourceBtn.addEventListener("click", resetSourcePreview);
+
+["dragenter", "dragover"].forEach((eventName) => {
+  uploadZone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    uploadZone.classList.add("dragging");
+  });
+});
+
+["dragleave", "drop"].forEach((eventName) => {
+  uploadZone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    uploadZone.classList.remove("dragging");
+  });
+});
+
+uploadZone.addEventListener("drop", (event) => {
+  const file = event.dataTransfer?.files?.[0];
+  if (!file) return;
+
+  const transfer = new DataTransfer();
+  transfer.items.add(file);
+  sourceInput.files = transfer.files;
+  setSourceFile(file);
+});
+
 function downloadBlob(blob, seed) {
-  const url  = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `tonai_${seed ?? "image"}.png`;
+  link.download = `tonai_${currentMode}_${seed ?? "image"}.png`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -172,155 +296,159 @@ function downloadBlob(blob, seed) {
 }
 
 downloadBtn.addEventListener("click", () => {
-  if (!generatedTiles.length) { showToast("No images to download.", "error"); return; }
-  generatedTiles.forEach(({ blob, seed }, i) => {
-    setTimeout(() => downloadBlob(blob, seed ?? `image_${i + 1}`), i * 250);
-  });
+  if (!generatedTile) {
+    showToast("No image to download.", "error");
+    return;
+  }
+  downloadBlob(generatedTile.blob, generatedTile.seed);
 });
 
-// ── CLEAR OUTPUT ─────────────────────────────────────────────────────
 function clearOutput() {
   previewGrid.innerHTML = PLACEHOLDER_HTML;
-  previewGrid.classList.remove("has-images", "cols-2");
-  generatedTiles = [];
+  previewGrid.classList.remove("has-image");
+  generatedTile = null;
   downloadBtn.disabled = true;
-  clearBtn.disabled    = true;
+  clearBtn.disabled = true;
 }
 
 clearBtn.addEventListener("click", clearOutput);
 
-// ── RENDER TILES ─────────────────────────────────────────────────────
-function renderTiles(tiles) {
+function renderResult(tile) {
+  const url = URL.createObjectURL(tile.blob);
   previewGrid.innerHTML = "";
-  previewGrid.classList.add("has-images");
-  previewGrid.classList.toggle("cols-2", tiles.length > 1);
+  previewGrid.classList.add("has-image");
 
-  tiles.forEach(({ blob, seed }, i) => {
-    const url = URL.createObjectURL(blob);
+  const imageTile = document.createElement("div");
+  imageTile.className = "image-tile";
 
-    const tile    = document.createElement("div");
-    tile.className = "img-tile";
+  const img = new Image();
+  img.src = url;
+  img.alt = currentMode === "image" ? "Edited image" : "Generated image";
+  img.onload = () => URL.revokeObjectURL(url);
 
-    const img = new Image();
-    img.src = url;
-    img.alt = `Generated image ${i + 1}`;
-    img.onload = () => URL.revokeObjectURL(url);
+  const footer = document.createElement("div");
+  footer.className = "tile-footer";
 
-    const footer = document.createElement("div");
-    footer.className = "tile-footer";
+  const seed = document.createElement("span");
+  seed.textContent = `Seed ${tile.seed ?? "-"}`;
 
-    const seedSpan = document.createElement("span");
-    seedSpan.className = "tile-seed";
-    seedSpan.textContent = `Seed: ${seed ?? "—"}`;
+  const button = document.createElement("button");
+  button.className = "tile-download";
+  button.type = "button";
+  button.title = "Download image";
+  button.setAttribute("aria-label", "Download image");
+  button.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>`;
+  button.addEventListener("click", () => downloadBlob(tile.blob, tile.seed));
 
-    const dlBtn = document.createElement("button");
-    dlBtn.className = "tile-dl-btn";
-    dlBtn.title = "Download this image";
-    dlBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
-    dlBtn.addEventListener("click", () => downloadBlob(blob, seed ?? `image_${i + 1}`));
-
-    footer.append(seedSpan, dlBtn);
-    tile.append(img, footer);
-    previewGrid.appendChild(tile);
-  });
+  footer.append(seed, button);
+  imageTile.append(img, footer);
+  previewGrid.appendChild(imageTile);
 }
 
-// ── FETCH ONE IMAGE ───────────────────────────────────────────────────
-async function fetchImage(payload) {
-  const res = await fetch("/generate/image", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+async function readImageResponse(res) {
   if (!res.ok) {
     let detail = "Request failed.";
-    try { const err = await res.json(); detail = err.detail || JSON.stringify(err); } catch (_) {}
+    try {
+      const err = await res.json();
+      detail = err.detail || JSON.stringify(err);
+    } catch (_) {}
     throw new Error(detail);
   }
+
   const blob = await res.blob();
   const seedHeader = res.headers.get("X-Used-Seed");
   return { blob, seed: seedHeader !== null ? Number(seedHeader) : null };
 }
 
-// ── GENERATE ─────────────────────────────────────────────────────────
-async function generate() {
-  normalizeInputs();
+async function fetchTextImage() {
+  normalizeTextInputs();
 
-  const baseSeed = Number($("seed").value);
-  const basePayload = {
-    prompt:              promptEl.value.trim(),
-    negative_prompt:     "",
-    width:               Number(widthInput.value),
-    height:              Number(heightInput.value),
+  const payload = {
+    prompt: promptEl.value.trim(),
+    negative_prompt: "",
+    width: Number(widthInput.value),
+    height: Number(heightInput.value),
     num_inference_steps: Number($("steps").value),
-    guidance_scale:      Number($("guidance").value),
-    seed:                baseSeed,
-    model:               $("model").value,
+    guidance_scale: Number($("guidance").value),
+    seed: Number($("seed").value),
+    model: $("model").value,
   };
 
-  if (!basePayload.prompt) {
-    showToast("Please enter a prompt first.", "error");
+  const res = await fetch("/generate/image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  return readImageResponse(res);
+}
+
+async function fetchEditedImage() {
+  const file = sourceInput.files?.[0];
+  if (!file) {
+    throw new Error("Choose a source image.");
+  }
+
+  const form = new FormData();
+  form.append("image", file);
+  form.append("prompt", promptEl.value.trim());
+  form.append("negative_prompt", " ");
+  form.append("num_inference_steps", String(Number($("steps").value)));
+  form.append("true_cfg_scale", String(Number($("true-cfg").value)));
+  form.append("seed", String(Number($("seed").value)));
+  form.append("model", $("edit-model").value);
+
+  const res = await fetch("/edit/image", {
+    method: "POST",
+    body: form,
+  });
+
+  return readImageResponse(res);
+}
+
+async function runImageJob() {
+  if (!promptEl.value.trim()) {
+    showToast("Enter a prompt.", "error");
     promptEl.focus();
     return;
   }
 
-  // Build per-image seeds: random (-1) stays -1 for all; explicit seeds increment
-  const seeds = Array.from({ length: activeCount }, (_, i) =>
-    baseSeed === -1 ? -1 : baseSeed + i
-  );
+  if (currentMode === "image" && !sourceInput.files?.[0]) {
+    showToast("Choose a source image.", "error");
+    sourceInput.focus();
+    return;
+  }
 
-  btn.disabled = true;
-  const label = activeCount > 1 ? `Generating ${activeCount} images…` : "Generating…";
-  setStatus(label);
+  generateBtn.disabled = true;
+  setStatus(currentMode === "image" ? "Editing image..." : "Generating image...");
 
   try {
-    const results = await Promise.allSettled(
-      seeds.map((seed) => fetchImage({ ...basePayload, seed }))
-    );
-
-    const tiles = results
-      .filter((r) => r.status === "fulfilled")
-      .map((r) => r.value);
-
-    const errors = results.filter((r) => r.status === "rejected");
-
-    if (tiles.length > 0) {
-      generatedTiles = tiles;
-      renderTiles(tiles);
-      downloadBtn.disabled = false;
-      clearBtn.disabled    = false;
-    }
-
-    if (errors.length > 0 && tiles.length === 0) {
-      throw new Error(errors[0].reason?.message || "All requests failed.");
-    }
-
-    const msg = tiles.length === 1
-      ? "Image generated!"
-      : `${tiles.length} of ${activeCount} images generated!`;
-    setStatus(msg.replace("!", "."), "success");
-    showToast(msg, "success");
+    const tile = currentMode === "image" ? await fetchEditedImage() : await fetchTextImage();
+    generatedTile = tile;
+    renderResult(tile);
+    downloadBtn.disabled = false;
+    clearBtn.disabled = false;
+    setStatus(currentMode === "image" ? "Image edited." : "Image generated.", "success");
+    showToast(currentMode === "image" ? "Image edited." : "Image generated.", "success");
     setTimeout(() => setStatus(""), 3500);
-
-    if (errors.length > 0) {
-      showToast(`${errors.length} image(s) failed.`, "error");
-    }
   } catch (err) {
-    setStatus(err.message || "Unexpected error.", "error");
-    showToast(err.message || "Generation failed.", "error");
+    const message = err.message || "Image request failed.";
+    setStatus(message, "error");
+    showToast(message, "error");
   } finally {
-    btn.disabled = false;
+    generateBtn.disabled = false;
   }
 }
 
-btn.addEventListener("click", generate);
+generateBtn.addEventListener("click", runImageJob);
 
-document.addEventListener("keydown", (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && !btn.disabled) {
-    e.preventDefault();
-    generate();
+document.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && !generateBtn.disabled) {
+    event.preventDefault();
+    runImageJob();
   }
 });
 
-// ── INIT ─────────────────────────────────────────────────────────────
-applyRatio(activeRatio);
+applyRatio("1:1");
+updateCounter();
+setMode("text");

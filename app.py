@@ -9,12 +9,19 @@ import io
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
+from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
-from engine import DEFAULT_MODEL_NAME, ImageGenerationEngine, ImageGenerationRequest
+from engine import (
+    DEFAULT_EDIT_MODEL_NAME,
+    DEFAULT_MODEL_NAME,
+    ImageEditRequest,
+    ImageGenerationEngine,
+    ImageGenerationRequest,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -58,6 +65,28 @@ def _run_generation(req: GenerateRequest):
     return result.image, result.seed
 
 
+def _run_edit(req: ImageEditRequest):
+    try:
+        result = ENGINE.edit(req)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return result.image, result.seed
+
+
+def _read_upload_image(file: UploadFile):
+    if file.content_type and not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=415, detail="Uploaded file must be an image.")
+
+    try:
+        data = file.file.read()
+        image = Image.open(io.BytesIO(data)).convert("RGB")
+    except (UnidentifiedImageError, OSError) as exc:
+        raise HTTPException(status_code=400, detail="Could not read uploaded image.") from exc
+
+    return image
+
+
 DEBUG_MODE = False
 
 app = FastAPI(title="TonAI Image Generator API", version="1.0.0")
@@ -75,6 +104,7 @@ def health():
         "status": "ok",
         "current_model": ENGINE.current_model,
         "cuda_available": ENGINE.cuda_available,
+        "image_edit_model": DEFAULT_EDIT_MODEL_NAME,
     }
 
 
@@ -96,6 +126,38 @@ def generate_raw(req: GenerateRequest):
         content=buf.getvalue(),
         media_type="image/png",
         headers={"X-Used-Seed": str(seed)},
+    )
+
+
+@app.post("/edit/image")
+def edit_raw(
+    image: UploadFile = File(...),
+    prompt: str = Form(...),
+    negative_prompt: str = Form(" "),
+    num_inference_steps: int = Form(50, ge=1, le=100),
+    true_cfg_scale: float = Form(4.0, ge=0.0, le=20.0),
+    seed: int = Form(42),
+    model: str = Form(DEFAULT_EDIT_MODEL_NAME),
+):
+    source_image = _read_upload_image(image)
+    output_image, used_seed = _run_edit(
+        ImageEditRequest(
+            image=source_image,
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            num_inference_steps=num_inference_steps,
+            true_cfg_scale=true_cfg_scale,
+            seed=seed,
+            model=model,
+        )
+    )
+
+    buf = io.BytesIO()
+    output_image.save(buf, format="PNG")
+    return Response(
+        content=buf.getvalue(),
+        media_type="image/png",
+        headers={"X-Used-Seed": str(used_seed)},
     )
 
 
