@@ -193,9 +193,11 @@ svg {
 
 .output-panel {
   padding: 16px;
+  height: calc(100dvh - 104px);
   min-height: 620px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .mode-tabs {
@@ -774,7 +776,8 @@ select:focus {
   }
 
   .output-panel {
-    min-height: 560px;
+    height: 560px;
+    min-height: 0;
   }
 }
 
@@ -838,7 +841,8 @@ select:focus {
   }
 
   .output-panel {
-    min-height: 470px;
+    height: 470px;
+    min-height: 0;
   }
 }
 
