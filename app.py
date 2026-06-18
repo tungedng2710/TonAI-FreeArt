@@ -98,6 +98,20 @@ def root():
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/favicon.svg", include_in_schema=False)
+def favicon():
+    return FileResponse(STATIC_DIR / "favicon.svg", media_type="image/svg+xml")
+
+
+@app.get("/sw.js", include_in_schema=False)
+def service_worker():
+    return FileResponse(
+        STATIC_DIR / "sw.js",
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache"},
+    )
+
+
 @app.get("/health")
 def health():
     return {
