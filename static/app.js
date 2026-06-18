@@ -165,17 +165,14 @@ function renderExamples() {
     const card = document.createElement("button");
     card.className = "example-card";
     card.type = "button";
-    card.setAttribute("aria-label", `Use example prompt ${index + 1}`);
-
-    const label = document.createElement("span");
-    label.className = "example-card-label";
-    label.textContent = `Example ${index + 1}`;
+    card.title = promptText;
+    card.setAttribute("aria-label", `Use example prompt ${index + 1}: ${promptText}`);
 
     const text = document.createElement("span");
     text.className = "example-card-text";
     text.textContent = promptText;
 
-    card.append(label, text);
+    card.append(text);
     card.addEventListener("click", () => {
       promptEl.value = promptText;
       updateCounter();
