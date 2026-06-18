@@ -22,6 +22,7 @@ const removeSourceBtn = $("remove-source");
 const textSettings = $("text-settings");
 const editSettings = $("edit-settings");
 const guidanceField = $("guidance-field");
+const trueCfgField = $("true-cfg-field");
 const modeChip = $("mode-chip");
 const outputTitle = $("output-title");
 const outputSubtitle = $("output-subtitle");
@@ -204,6 +205,7 @@ function setMode(mode) {
   textSettings.classList.toggle("hidden", mode !== "text");
   editSettings.classList.toggle("hidden", mode !== "image");
   guidanceField.classList.toggle("hidden", mode !== "text");
+  trueCfgField.classList.toggle("hidden", mode !== "image");
 
   modeChip.textContent = config.title;
   outputTitle.textContent = config.title;
