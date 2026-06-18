@@ -45,16 +45,16 @@
 
       <div id="source-field" class="field-group source-field hidden">
         <div class="label-row">
-          <label for="source-image">Source image</label>
+          <label for="source-image">Source images <span class="label-hint">max 2</span></label>
           <button id="remove-source" class="text-btn" type="button" disabled>Remove</button>
         </div>
         <label id="upload-zone" class="upload-zone" for="source-image">
-          <input id="source-image" type="file" accept="image/*" />
+          <input id="source-image" type="file" accept="image/*" multiple />
           <span id="upload-empty" class="upload-empty">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8 12 3 7 8"/><path d="M12 3v12"/></svg>
-            Choose image
+            Choose up to 2 images
           </span>
-          <img id="source-preview" class="source-preview" alt="Source image preview" hidden />
+          <div id="source-preview" class="source-preview" hidden></div>
         </label>
       </div>
 

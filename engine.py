@@ -315,7 +315,10 @@ class ImageGenerationEngine:
         pipe,
         generator,
     ) -> dict[str, Any]:
-        image = req.image.convert("RGB") if hasattr(req.image, "convert") else req.image
+        if isinstance(req.image, list):
+            image = [item.convert("RGB") if hasattr(item, "convert") else item for item in req.image]
+        else:
+            image = req.image.convert("RGB") if hasattr(req.image, "convert") else req.image
         kwargs = {
             "image": image,
             "prompt": req.prompt.strip(),
@@ -329,8 +332,12 @@ class ImageGenerationEngine:
 
         if self._pipeline_supports_arg(pipe, "true_cfg_scale"):
             kwargs["true_cfg_scale"] = float(req.true_cfg_scale)
-        elif self._pipeline_supports_arg(pipe, "guidance_scale"):
+
+        if self._pipeline_supports_arg(pipe, "guidance_scale"):
             kwargs["guidance_scale"] = float(req.true_cfg_scale)
+
+        if self._pipeline_supports_arg(pipe, "num_images_per_prompt"):
+            kwargs["num_images_per_prompt"] = 1
 
         return kwargs
 

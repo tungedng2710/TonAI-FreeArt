@@ -30,7 +30,7 @@ const examplesEl = document.querySelector(".example-prompts");
 
 let currentMode = "text";
 let generatedTile = null;
-let sourceObjectUrl = "";
+let sourceObjectUrls = [];
 let textPromptExamples = [];
 
 const MANUAL_MIN = 256;
@@ -223,29 +223,44 @@ document.querySelectorAll(".mode-tab").forEach((button) => {
 });
 
 function resetSourcePreview() {
-  if (sourceObjectUrl) {
-    URL.revokeObjectURL(sourceObjectUrl);
-    sourceObjectUrl = "";
-  }
+  sourceObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+  sourceObjectUrls = [];
   sourceInput.value = "";
   sourcePreview.hidden = true;
-  sourcePreview.removeAttribute("src");
+  sourcePreview.replaceChildren();
   uploadEmpty.hidden = false;
   uploadZone.classList.remove("has-source");
   removeSourceBtn.disabled = true;
 }
 
-function setSourceFile(file) {
-  if (!file || !file.type.startsWith("image/")) {
+function setSourceFiles(fileList) {
+  const files = Array.from(fileList || []).slice(0, 2);
+  if (!files.length || files.some((file) => !file.type.startsWith("image/"))) {
     showToast("Choose an image file.", "error");
     return;
   }
 
-  if (sourceObjectUrl) {
-    URL.revokeObjectURL(sourceObjectUrl);
+  if ((fileList?.length || 0) > 2) {
+    showToast("Using the first 2 images.");
   }
-  sourceObjectUrl = URL.createObjectURL(file);
-  sourcePreview.src = sourceObjectUrl;
+
+  sourceObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+  sourceObjectUrls = files.map((file) => URL.createObjectURL(file));
+  sourcePreview.replaceChildren();
+
+  sourceObjectUrls.forEach((url, index) => {
+    const img = new Image();
+    img.src = url;
+    img.alt = `Source image ${index + 1} preview`;
+    sourcePreview.appendChild(img);
+  });
+
+  if (files.length !== sourceInput.files?.length) {
+    const transfer = new DataTransfer();
+    files.forEach((file) => transfer.items.add(file));
+    sourceInput.files = transfer.files;
+  }
+
   sourcePreview.hidden = false;
   uploadEmpty.hidden = true;
   uploadZone.classList.add("has-source");
@@ -253,7 +268,7 @@ function setSourceFile(file) {
 }
 
 sourceInput.addEventListener("change", () => {
-  setSourceFile(sourceInput.files?.[0]);
+  setSourceFiles(sourceInput.files);
 });
 
 removeSourceBtn.addEventListener("click", resetSourcePreview);
@@ -273,13 +288,13 @@ removeSourceBtn.addEventListener("click", resetSourcePreview);
 });
 
 uploadZone.addEventListener("drop", (event) => {
-  const file = event.dataTransfer?.files?.[0];
-  if (!file) return;
+  const files = Array.from(event.dataTransfer?.files || []).slice(0, 2);
+  if (!files.length) return;
 
   const transfer = new DataTransfer();
-  transfer.items.add(file);
+  files.forEach((file) => transfer.items.add(file));
   sourceInput.files = transfer.files;
-  setSourceFile(file);
+  setSourceFiles(sourceInput.files);
 });
 
 function downloadBlob(blob, seed) {
@@ -382,13 +397,13 @@ async function fetchTextImage() {
 }
 
 async function fetchEditedImage() {
-  const file = sourceInput.files?.[0];
-  if (!file) {
+  const files = Array.from(sourceInput.files || []).slice(0, 2);
+  if (!files.length) {
     throw new Error("Choose a source image.");
   }
 
   const form = new FormData();
-  form.append("image", file);
+  files.forEach((file) => form.append("images", file));
   form.append("prompt", promptEl.value.trim());
   form.append("negative_prompt", " ");
   form.append("num_inference_steps", String(Number($("steps").value)));

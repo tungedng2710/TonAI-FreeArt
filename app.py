@@ -7,6 +7,7 @@ Author: https://tungedng2710.github.io/
 import base64
 import io
 from pathlib import Path
+from typing import Annotated
 
 import uvicorn
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -151,7 +152,7 @@ def generate_raw(req: GenerateRequest):
 
 @app.post("/edit/image")
 def edit_raw(
-    image: UploadFile = File(...),
+    images: Annotated[list[UploadFile], File(max_length=2)],
     prompt: str = Form(...),
     negative_prompt: str = Form(" "),
     num_inference_steps: int = Form(50, ge=1, le=100),
@@ -159,7 +160,11 @@ def edit_raw(
     seed: int = Form(42),
     model: str = Form(DEFAULT_EDIT_MODEL_NAME),
 ):
-    source_image = _read_upload_image(image)
+    if not images:
+        raise HTTPException(status_code=400, detail="At least one source image is required.")
+
+    source_images = [_read_upload_image(image) for image in images]
+    source_image = source_images if len(source_images) > 1 else source_images[0]
     output_image, used_seed = _run_edit(
         ImageEditRequest(
             image=source_image,

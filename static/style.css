@@ -334,7 +334,7 @@ select:focus {
 
 .upload-zone {
   width: 100%;
-  aspect-ratio: 16 / 10;
+  min-height: 116px;
   margin: 0;
   display: grid;
   place-items: center;
@@ -378,8 +378,17 @@ select:focus {
 .source-preview {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  min-height: 116px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 1px;
   background: #05070a;
+}
+
+.source-preview img {
+  width: 100%;
+  height: 116px;
+  object-fit: contain;
 }
 
 .text-btn {
