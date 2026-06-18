@@ -74,15 +74,16 @@ class ImageGenerationResult:
 
 class ImageGenerationEngine:
     def __init__(self) -> None:
-        self._pipeline = None
-        self._current_model = None
-        self._pipeline_kind = None
+        self._generation_pipeline = None
+        self._generation_model = None
+        self._edit_pipeline = None
+        self._edit_model = None
         self._pipeline_lock = threading.Lock()
         self._inference_lock = threading.Lock()
 
     @property
     def current_model(self) -> str:
-        return self._current_model or DEFAULT_MODEL_ID
+        return self._generation_model or DEFAULT_MODEL_ID
 
     @property
     def cuda_available(self) -> bool:
@@ -94,6 +95,7 @@ class ImageGenerationEngine:
 
         seed = self._resolve_seed(req.seed)
         generator = torch.Generator(device=self._generator_device()).manual_seed(seed)
+        model_id = self.resolve_model_id(req.model)
         pipe = self.get_pipeline(req.model)
         kwargs = self._build_generation_kwargs(req, pipe, generator)
 
@@ -104,7 +106,7 @@ class ImageGenerationEngine:
         return ImageGenerationResult(
             image=image,
             seed=seed,
-            model_id=self.current_model,
+            model_id=model_id,
         )
 
     def edit(self, req: ImageEditRequest) -> ImageGenerationResult:
@@ -115,6 +117,7 @@ class ImageGenerationEngine:
 
         seed = self._resolve_seed(req.seed)
         generator = torch.manual_seed(seed)
+        model_id = self.resolve_edit_model_id(req.model)
         pipe = self.get_edit_pipeline(req.model)
         kwargs = self._build_edit_kwargs(req, pipe, generator)
 
@@ -125,48 +128,57 @@ class ImageGenerationEngine:
         return ImageGenerationResult(
             image=image,
             seed=seed,
-            model_id=self.current_model,
+            model_id=model_id,
         )
 
     def get_pipeline(self, model_name: str = DEFAULT_MODEL_NAME) -> DiffusionPipeline:
         model_id = self.resolve_model_id(model_name)
 
         with self._pipeline_lock:
-            if (
-                self._pipeline is None
-                or self._current_model != model_id
-                or self._pipeline_kind != "generation"
-            ):
-                self.release()
-                self._pipeline = self._build_pipeline(model_id)
-                self._current_model = model_id
-                self._pipeline_kind = "generation"
-        return self._pipeline
+            if self._generation_pipeline is None or self._generation_model != model_id:
+                self._release_generation_pipeline()
+                self._generation_pipeline = self._build_pipeline(model_id)
+                self._generation_model = model_id
+        return self._generation_pipeline
 
     def get_edit_pipeline(self, model_name: str = DEFAULT_EDIT_MODEL_NAME):
         model_id = self.resolve_edit_model_id(model_name)
 
         with self._pipeline_lock:
-            if (
-                self._pipeline is None
-                or self._current_model != model_id
-                or self._pipeline_kind != "edit"
-            ):
-                self.release()
-                self._pipeline = self._build_edit_pipeline(model_id)
-                self._current_model = model_id
-                self._pipeline_kind = "edit"
-        return self._pipeline
+            if self._edit_pipeline is None or self._edit_model != model_id:
+                self._release_edit_pipeline()
+                self._edit_pipeline = self._build_edit_pipeline(model_id)
+                self._edit_model = model_id
+        return self._edit_pipeline
+
+    def preload_default_pipeline(self) -> None:
+        self.get_pipeline(DEFAULT_MODEL_NAME)
 
     def release(self) -> None:
-        if self._pipeline is None:
+        self._release_generation_pipeline()
+        self._release_edit_pipeline()
+        self._clear_memory()
+
+    def _release_generation_pipeline(self) -> None:
+        if self._generation_pipeline is None:
             return
 
-        old_pipeline = self._pipeline
-        self._pipeline = None
-        self._current_model = None
-        self._pipeline_kind = None
+        old_pipeline = self._generation_pipeline
+        self._generation_pipeline = None
+        self._generation_model = None
         del old_pipeline
+
+    def _release_edit_pipeline(self) -> None:
+        if self._edit_pipeline is None:
+            return
+
+        old_pipeline = self._edit_pipeline
+        self._edit_pipeline = None
+        self._edit_model = None
+        del old_pipeline
+
+    @staticmethod
+    def _clear_memory() -> None:
         gc.collect()
 
         if torch.cuda.is_available():

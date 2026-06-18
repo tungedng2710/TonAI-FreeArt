@@ -93,6 +93,11 @@ app = FastAPI(title="TonAI Image Generator API", version="1.0.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
+@app.on_event("startup")
+def preload_default_model():
+    ENGINE.preload_default_pipeline()
+
+
 @app.get("/", include_in_schema=False)
 def root():
     return FileResponse(STATIC_DIR / "index.html")
