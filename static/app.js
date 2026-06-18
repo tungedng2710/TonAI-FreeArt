@@ -161,17 +161,27 @@ function renderExamples() {
   examplesEl.innerHTML = "";
   examplesEl.classList.toggle("hidden", examples.length === 0);
 
-  examples.slice(0, 4).forEach((promptText) => {
-    const chip = document.createElement("button");
-    chip.className = "example-chip";
-    chip.type = "button";
-    chip.textContent = promptText;
-    chip.addEventListener("click", () => {
+  examples.forEach((promptText, index) => {
+    const card = document.createElement("button");
+    card.className = "example-card";
+    card.type = "button";
+    card.setAttribute("aria-label", `Use example prompt ${index + 1}`);
+
+    const label = document.createElement("span");
+    label.className = "example-card-label";
+    label.textContent = `Example ${index + 1}`;
+
+    const text = document.createElement("span");
+    text.className = "example-card-text";
+    text.textContent = promptText;
+
+    card.append(label, text);
+    card.addEventListener("click", () => {
       promptEl.value = promptText;
       updateCounter();
       promptEl.focus();
     });
-    examplesEl.appendChild(chip);
+    examplesEl.appendChild(card);
   });
 }
 

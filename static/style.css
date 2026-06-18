@@ -415,27 +415,43 @@ select:focus {
   margin-bottom: 14px;
 }
 
-.example-chip {
+.example-card {
   min-width: 0;
-  height: 36px;
-  padding: 0 10px;
+  min-height: 112px;
+  padding: 12px;
   overflow: hidden;
   color: var(--muted);
   background: var(--panel-soft);
   border: 1px solid var(--line);
   border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 650;
   text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
 }
 
-.example-chip:hover {
+.example-card:hover {
   color: var(--primary);
   border-color: var(--primary);
+}
+
+.example-card-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.example-card-text {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
 }
 
 .ratio-grid {
