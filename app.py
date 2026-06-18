@@ -95,7 +95,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.on_event("startup")
 def preload_default_model():
-    ENGINE.preload_default_pipeline()
+    ENGINE.preload_startup_pipelines()
 
 
 @app.get("/", include_in_schema=False)
@@ -122,6 +122,7 @@ def health():
     return {
         "status": "ok",
         "current_model": ENGINE.current_model,
+        "current_edit_model": ENGINE.current_edit_model,
         "cuda_available": ENGINE.cuda_available,
         "image_edit_model": DEFAULT_EDIT_MODEL_NAME,
     }

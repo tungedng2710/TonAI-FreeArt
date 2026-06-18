@@ -35,6 +35,7 @@ MODEL_MIN_GPU_MEMORY_GIB = {
     MODEL_MAP["FLUX.2-dev"]: 50,
     DEFAULT_EDIT_MODEL_ID: 24,
 }
+PRELOAD_BOTH_MODELS_MIN_GIB = 70
 MODEL_CPU_OFFLOAD = os.getenv("TONAI_MODEL_CPU_OFFLOAD", "").lower() in {
     "1",
     "true",
@@ -84,6 +85,10 @@ class ImageGenerationEngine:
     @property
     def current_model(self) -> str:
         return self._generation_model or DEFAULT_MODEL_ID
+
+    @property
+    def current_edit_model(self) -> str | None:
+        return self._edit_model
 
     @property
     def cuda_available(self) -> bool:
@@ -153,6 +158,17 @@ class ImageGenerationEngine:
 
     def preload_default_pipeline(self) -> None:
         self.get_pipeline(DEFAULT_MODEL_NAME)
+
+    def preload_startup_pipelines(self) -> None:
+        if not torch.cuda.is_available():
+            self.preload_default_pipeline()
+            return
+
+        total_gpu_memory_gib = self._gpu_memory_gib()
+        self.preload_default_pipeline()
+
+        if total_gpu_memory_gib > PRELOAD_BOTH_MODELS_MIN_GIB:
+            self.get_edit_pipeline(DEFAULT_EDIT_MODEL_NAME)
 
     def release(self) -> None:
         self._release_generation_pipeline()
