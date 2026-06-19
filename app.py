@@ -6,6 +6,7 @@ Author: https://tungedng2710.github.io/
 
 import base64
 import io
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
 
@@ -90,13 +91,14 @@ def _read_upload_image(file: UploadFile):
 
 DEBUG_MODE = False
 
-app = FastAPI(title="TonAI Image Generator API", version="1.0.0")
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-
-@app.on_event("startup")
-def preload_default_model():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     ENGINE.preload_startup_pipelines()
+    yield
+
+
+app = FastAPI(title="TonAI Image Generator API", version="1.0.0", lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/", include_in_schema=False)
