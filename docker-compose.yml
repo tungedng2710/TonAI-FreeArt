@@ -1,0 +1,20 @@
+services:
+  imagegen:
+    build: .
+    ports:
+      - "7863:7863"
+    environment:
+      HF_HOME: /cache/huggingface
+    volumes:
+      - huggingface-cache:/cache/huggingface
+    # Enable this block on hosts with the NVIDIA Container Toolkit installed.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  huggingface-cache:

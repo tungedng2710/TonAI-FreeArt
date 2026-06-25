@@ -47,7 +47,7 @@ nvidia-nvjitlink-cu12==12.8.93
 nvidia-nvshmem-cu12==3.4.5
 nvidia-nvtx-cu12==12.8.90
 orjson==3.11.7
-packaging @ file:///home/task_176104874243446/conda-bld/packaging_1761049080023/work
+packaging==25.0
 pandas==3.0.1
 pillow==12.1.1
 psutil==7.2.2
