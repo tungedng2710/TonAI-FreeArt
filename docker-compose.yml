@@ -1,5 +1,5 @@
 services:
-  imagegen:
+  app:
     build: .
     ports:
       - "7863:7863"
