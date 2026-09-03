@@ -41,11 +41,13 @@ class GenerateRequest(BaseModel):
     guidance_scale: float = Field(default=0.0, ge=0.0, le=20.0)
     seed: int = Field(default=42, description="Use -1 for random seed.")
     model: str = Field(default=DEFAULT_MODEL_NAME, description="Model to use")
+    n: int = Field(default=1, ge=1, le=4, description="Number of images to generate.")
 
 
 class GenerateResponse(BaseModel):
     seed: int
     image_base64: str
+    images_base64: list[str]
     mime_type: str = "image/png"
 
 
@@ -62,6 +64,7 @@ def _run_generation(req: GenerateRequest):
                 guidance_scale=req.guidance_scale,
                 seed=req.seed,
                 model=req.model,
+                n=req.n,
             )
         )
     except ValueError as exc:
@@ -69,7 +72,7 @@ def _run_generation(req: GenerateRequest):
     except VLLMOmniError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    return result.image, result.seed
+    return result
 
 
 def _run_edit(req: ImageEditRequest):
@@ -80,7 +83,16 @@ def _run_edit(req: ImageEditRequest):
     except VLLMOmniError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    return result.image, result.seed
+    return result
+
+
+def _encode_images(images: list[Image.Image]) -> list[str]:
+    encoded_images = []
+    for image in images:
+        buf = io.BytesIO()
+        image.save(buf, format="PNG")
+        encoded_images.append(base64.b64encode(buf.getvalue()).decode("utf-8"))
+    return encoded_images
 
 
 def _read_upload_image(file: UploadFile):
@@ -143,22 +155,29 @@ def health():
 
 @app.post("/generate", response_model=GenerateResponse)
 def generate(req: GenerateRequest):
-    image, seed = _run_generation(req)
-    buf = io.BytesIO()
-    image.save(buf, format="PNG")
-    encoded = base64.b64encode(buf.getvalue()).decode("utf-8")
-    return GenerateResponse(seed=seed, image_base64=encoded)
+    result = _run_generation(req)
+    encoded_images = _encode_images(result.images)
+    return GenerateResponse(
+        seed=result.seed,
+        image_base64=encoded_images[0],
+        images_base64=encoded_images,
+    )
 
 
 @app.post("/generate/image")
 def generate_raw(req: GenerateRequest):
-    image, seed = _run_generation(req)
+    if req.n != 1:
+        raise HTTPException(
+            status_code=422,
+            detail="Use POST /generate to request multiple images.",
+        )
+    result = _run_generation(req)
     buf = io.BytesIO()
-    image.save(buf, format="PNG")
+    result.image.save(buf, format="PNG")
     return Response(
         content=buf.getvalue(),
         media_type="image/png",
-        headers={"X-Used-Seed": str(seed)},
+        headers={"X-Used-Seed": str(result.seed)},
     )
 
 
@@ -177,7 +196,7 @@ def edit_raw(
 
     source_images = [_read_upload_image(image) for image in images]
     source_image = source_images if len(source_images) > 1 else source_images[0]
-    output_image, used_seed = _run_edit(
+    result = _run_edit(
         ImageEditRequest(
             image=source_image,
             prompt=prompt,
@@ -190,11 +209,11 @@ def edit_raw(
     )
 
     buf = io.BytesIO()
-    output_image.save(buf, format="PNG")
+    result.image.save(buf, format="PNG")
     return Response(
         content=buf.getvalue(),
         media_type="image/png",
-        headers={"X-Used-Seed": str(used_seed)},
+        headers={"X-Used-Seed": str(result.seed)},
     )
 
 

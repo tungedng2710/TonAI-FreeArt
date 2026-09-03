@@ -5,9 +5,9 @@
   --panel-solid: rgba(255, 255, 255, 0.82);
   --text: #1d1d1f;
   --muted: #6e6e73;
-  --line: rgba(255, 255, 255, 0.92);
-  --line-strong: rgba(60, 60, 67, 0.18);
-  --input: rgba(255, 255, 255, 0.54);
+  --line: rgba(60, 60, 67, 0.16);
+  --line-strong: rgba(60, 60, 67, 0.30);
+  --input: rgba(255, 255, 255, 0.72);
   --primary: #007aff;
   --primary-hover: #006ee6;
   --accent: #bf5b00;
@@ -15,7 +15,7 @@
   --success: #248a3d;
   --glass-highlight: rgba(255, 255, 255, 0.96);
   --glass-shadow: rgba(0, 0, 0, 0.10);
-  --shadow: 0 14px 42px rgba(0, 0, 0, 0.09), inset 0 1px 0 rgba(255, 255, 255, 0.98), inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+  --shadow: 0 14px 42px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.98), inset 0 -1px 0 rgba(0, 0, 0, 0.07);
   --radius: 26px;
   color-scheme: light;
 }
@@ -126,7 +126,7 @@ svg {
   position: sticky;
   top: 0;
   z-index: 20;
-  border-bottom: 1px solid var(--glass-highlight);
+  border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--panel) 66%, transparent);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
   backdrop-filter: blur(32px) saturate(180%);
@@ -153,7 +153,7 @@ svg {
 .brand-icon {
   width: 38px;
   height: 38px;
-  border: 1px solid var(--glass-highlight);
+  border: 1px solid var(--line);
   border-radius: 14px;
   box-shadow: 0 8px 24px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight);
   object-fit: cover;
@@ -332,6 +332,21 @@ label {
   font-weight: 650;
 }
 
+.range-value {
+  min-width: 28px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--panel-solid));
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--line));
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+  font-size: 12px;
+  font-weight: 760;
+  font-variant-numeric: tabular-nums;
+}
+
 .char-counter {
   color: var(--muted);
   font-size: 12px;
@@ -357,7 +372,7 @@ select {
   border: 1px solid var(--line);
   border-radius: 13px;
   outline: none;
-  box-shadow: inset 0 1px 2px rgba(20, 32, 58, 0.08), 0 1px 0 var(--glass-highlight);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), inset 0 1px 0 var(--glass-highlight);
   backdrop-filter: blur(12px);
   transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
@@ -377,6 +392,83 @@ select:focus {
   border-color: var(--primary);
   background: var(--panel-solid);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent), inset 0 1px 0 var(--glass-highlight);
+}
+
+input.image-count-range {
+  --range-progress: 0%;
+  width: 100%;
+  height: 22px;
+  min-height: 22px;
+  margin: 3px 0 0;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: linear-gradient(
+    to right,
+    var(--primary) 0 var(--range-progress),
+    var(--line-strong) var(--range-progress) 100%
+  );
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 6px;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+input.image-count-range:focus {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+input.image-count-range:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 24%, transparent);
+  outline-offset: 3px;
+}
+
+.image-count-range::-webkit-slider-runnable-track {
+  height: 6px;
+  background: transparent;
+  border-radius: 999px;
+}
+
+.image-count-range::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  margin-top: -7px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: #ffffff;
+  border: 1px solid rgba(60, 60, 67, 0.22);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22), inset 0 1px 0 #ffffff;
+}
+
+.image-count-range::-moz-range-track {
+  height: 6px;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+}
+
+.image-count-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(60, 60, 67, 0.22);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22), inset 0 1px 0 #ffffff;
+}
+
+.range-scale {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
 }
 
 .sr-only {
@@ -472,8 +564,8 @@ select:focus {
 }
 
 .example-prompts {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -482,7 +574,7 @@ select:focus {
   display: inline-flex;
   align-items: center;
   max-width: 100%;
-  min-width: 96px;
+  min-width: 0;
   height: 34px;
   padding: 0 12px;
   overflow: hidden;
@@ -525,7 +617,7 @@ select:focus {
   background: var(--panel-soft);
   border: 1px solid var(--line);
   border-radius: 11px;
-  box-shadow: inset 0 1px 0 var(--glass-highlight);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), inset 0 1px 0 var(--glass-highlight);
   cursor: pointer;
   font-size: 12px;
   font-weight: 760;
@@ -688,6 +780,17 @@ select:focus {
 
 .preview-grid.has-image {
   padding: 10px;
+}
+
+.preview-grid.multi-image {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  place-items: stretch;
+  gap: 10px;
+}
+
+.preview-grid.multi-image .image-tile:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .placeholder {

@@ -47,6 +47,7 @@ class ImageGenerationRequest:
     guidance_scale: float = 0.0
     seed: int = 42
     model: str = DEFAULT_MODEL_NAME
+    n: int = 1
 
 
 @dataclass
@@ -58,13 +59,19 @@ class ImageEditRequest:
     true_cfg_scale: float = 4.0
     seed: int = 42
     model: str = DEFAULT_EDIT_MODEL_NAME
+    n: int = 1
 
 
 @dataclass
 class ImageGenerationResult:
-    image: Image.Image
+    images: list[Image.Image]
     seed: int
     model_id: str
+
+    @property
+    def image(self) -> Image.Image:
+        """Return the first image for single-image API compatibility."""
+        return self.images[0]
 
 
 class VLLMOmniError(RuntimeError):
@@ -92,12 +99,13 @@ class ImageGenerationEngine:
         if not req.prompt or not req.prompt.strip():
             raise ValueError("Prompt is required.")
 
+        image_count = self._validate_image_count(req.n)
         seed = self._resolve_seed(req.seed)
         model_id = self.resolve_model_id(req.model)
         payload = {
             "model": model_id,
             "prompt": req.prompt.strip(),
-            "n": 1,
+            "n": image_count,
             "size": f"{int(req.width)}x{int(req.height)}",
             "num_inference_steps": int(req.num_inference_steps),
             "true_cfg_scale": float(req.true_cfg_scale),
@@ -109,7 +117,7 @@ class ImageGenerationEngine:
             payload["negative_prompt"] = req.negative_prompt.strip()
 
         return ImageGenerationResult(
-            image=self._request_generation(payload),
+            images=self._request_generation(payload),
             seed=seed,
             model_id=model_id,
         )
@@ -120,6 +128,7 @@ class ImageGenerationEngine:
         if req.image is None:
             raise ValueError("Source image is required.")
 
+        image_count = self._validate_image_count(req.n)
         seed = self._resolve_seed(req.seed)
         model_id = self.resolve_edit_model_id(req.model)
         source_images = req.image if isinstance(req.image, list) else [req.image]
@@ -137,7 +146,7 @@ class ImageGenerationEngine:
         data = {
             "prompt": req.prompt.strip(),
             "model": model_id,
-            "n": "1",
+            "n": str(image_count),
             "response_format": "b64_json",
             "output_format": "png",
             "num_inference_steps": str(int(req.num_inference_steps)),
@@ -148,7 +157,7 @@ class ImageGenerationEngine:
             data["negative_prompt"] = req.negative_prompt.strip() or " "
 
         return ImageGenerationResult(
-            image=self._request_edit(data, files),
+            images=self._request_edit(data, files),
             seed=seed,
             model_id=model_id,
         )
@@ -176,7 +185,14 @@ class ImageGenerationEngine:
         return secrets.randbelow(2**31 - 1) if seed < 0 else seed
 
     @staticmethod
-    def _request_generation(payload: dict[str, Any]) -> Image.Image:
+    def _validate_image_count(image_count: int) -> int:
+        image_count = int(image_count)
+        if not 1 <= image_count <= 4:
+            raise ValueError("Image count must be between 1 and 4.")
+        return image_count
+
+    @staticmethod
+    def _request_generation(payload: dict[str, Any]) -> list[Image.Image]:
         headers = {"Content-Type": "application/json"}
         if VLLM_OMNI_API_KEY:
             headers["Authorization"] = f"Bearer {VLLM_OMNI_API_KEY}"
@@ -195,7 +211,7 @@ class ImageGenerationEngine:
         return ImageGenerationEngine._decode_image_response(response, "generation")
 
     @staticmethod
-    def _request_edit(data: dict[str, str], files: list[tuple]) -> Image.Image:
+    def _request_edit(data: dict[str, str], files: list[tuple]) -> list[Image.Image]:
         headers = {}
         if VLLM_OMNI_EDIT_API_KEY:
             headers["Authorization"] = f"Bearer {VLLM_OMNI_EDIT_API_KEY}"
@@ -225,15 +241,28 @@ class ImageGenerationEngine:
     @staticmethod
     def _decode_image_response(
         response: requests.Response, operation: str
-    ) -> Image.Image:
+    ) -> list[Image.Image]:
         try:
             result = response.json()
-            encoded = result["data"][0]["b64_json"]
-            image_bytes = base64.b64decode(encoded, validate=True)
-            image = Image.open(io.BytesIO(image_bytes))
-            image.load()
-            return image.convert("RGB")
-        except (KeyError, IndexError, TypeError, ValueError, UnidentifiedImageError) as exc:
+            image_data = result["data"]
+            if not image_data:
+                raise ValueError("No images returned.")
+
+            images = []
+            for item in image_data:
+                image_bytes = base64.b64decode(item["b64_json"], validate=True)
+                image = Image.open(io.BytesIO(image_bytes))
+                image.load()
+                images.append(image.convert("RGB"))
+            return images
+        except (
+            KeyError,
+            IndexError,
+            TypeError,
+            ValueError,
+            OSError,
+            UnidentifiedImageError,
+        ) as exc:
             raise VLLMOmniError(
                 f"vLLM-Omni returned an invalid image {operation} response."
             ) from exc

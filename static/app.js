@@ -27,11 +27,20 @@ const modeChip = $("mode-chip");
 const outputTitle = $("output-title");
 const outputSubtitle = $("output-subtitle");
 const examplesEl = document.querySelector(".example-prompts");
+const imageCountInput = $("image-count");
+const imageCountValue = $("image-count-value");
 
 let currentMode = "text";
-let generatedTile = null;
+let generatedTiles = [];
 let sourceObjectUrls = [];
-let textPromptExamples = [];
+const textPromptExamples = [
+  "Editorial portrait of a stylish young adult East Asian woman in an oversized cream blazer and silk camisole, minimalist studio, soft window light, luxury fashion magazine aesthetic",
+  "A fashionable young adult Korean woman wearing layered Seoul streetwear, cropped bomber jacket, pleated skirt and statement sneakers, neon city evening, cinematic photography",
+  "Elegant young adult Japanese woman in a sculptural black couture dress with silver accessories, clean gallery interior, dramatic side lighting, high-fashion editorial portrait",
+  "Beautiful young adult Vietnamese woman wearing a contemporary pastel ao dai with delicate modern tailoring, sunlit architectural courtyard, graceful fashion campaign, realistic detail",
+  "Young adult Asian woman in a chic monochrome pantsuit, sleek ponytail and minimalist jewelry, modern glass office lobby, confident pose, polished commercial fashion photography",
+  "Glamorous young adult Asian woman in an emerald evening gown with refined beadwork, grand hotel entrance at night, warm cinematic lighting, sophisticated red-carpet fashion portrait",
+];
 
 const MANUAL_MIN = 256;
 const PRESET_MIN = 1024;
@@ -51,7 +60,7 @@ const RATIOS = {
 const MODE_CONFIG = {
   text: {
     title: "Text to Image",
-    subtitle: "Generated image",
+    subtitle: "Generated images",
     action: "Generate",
     prompt: "A cinematic portrait of a jazz pianist in a small club, warm stage light, 35mm film grain",
     steps: 20,
@@ -143,6 +152,17 @@ document.querySelectorAll(".ratio-btn").forEach((button) => {
 widthInput.addEventListener("change", normalizeTextInputs);
 heightInput.addEventListener("change", normalizeTextInputs);
 
+function updateImageCountSlider() {
+  const value = Number(imageCountInput.value);
+  const progress = ((value - 1) / 3) * 100;
+  imageCountInput.style.setProperty("--range-progress", `${progress}%`);
+  imageCountInput.setAttribute("aria-valuetext", `${value} ${value === 1 ? "image" : "images"}`);
+  imageCountValue.value = String(value);
+  imageCountValue.textContent = String(value);
+}
+
+imageCountInput.addEventListener("input", updateImageCountSlider);
+
 function updateCounter() {
   const max = Number(promptEl.getAttribute("maxlength") || 700);
   const len = promptEl.value.length;
@@ -181,21 +201,6 @@ function renderExamples() {
     examplesEl.appendChild(card);
   });
 }
-
-fetch("/static/prompts.json")
-  .then((res) => res.json())
-  .then((prompts) => {
-    textPromptExamples = Array.isArray(prompts) ? prompts : [];
-    MODE_CONFIG.text.examples = textPromptExamples;
-    renderExamples();
-  })
-  .catch(() => {
-    textPromptExamples = [
-      "Editorial fashion portrait in a minimalist studio, soft side lighting, crisp details",
-      "A wooden cabin beside a frozen alpine lake at sunrise, warm window light, mist",
-    ];
-    renderExamples();
-  });
 
 function setMode(mode) {
   currentMode = mode;
@@ -304,11 +309,12 @@ uploadZone.addEventListener("drop", (event) => {
   setSourceFiles(sourceInput.files);
 });
 
-function downloadBlob(blob, seed) {
+function downloadBlob(blob, seed, index = 0) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `tonai_${currentMode}_${seed ?? "image"}.png`;
+  const suffix = generatedTiles.length > 1 ? `_${index + 1}` : "";
+  link.download = `tonai_${currentMode}_${seed ?? "image"}${suffix}.png`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -316,53 +322,57 @@ function downloadBlob(blob, seed) {
 }
 
 downloadBtn.addEventListener("click", () => {
-  if (!generatedTile) {
+  if (!generatedTiles.length) {
     showToast("No image to download.", "error");
     return;
   }
-  downloadBlob(generatedTile.blob, generatedTile.seed);
+  generatedTiles.forEach((tile, index) => downloadBlob(tile.blob, tile.seed, index));
 });
 
 function clearOutput() {
   previewGrid.innerHTML = PLACEHOLDER_HTML;
-  previewGrid.classList.remove("has-image");
-  generatedTile = null;
+  previewGrid.classList.remove("has-image", "multi-image");
+  generatedTiles = [];
   downloadBtn.disabled = true;
   clearBtn.disabled = true;
 }
 
 clearBtn.addEventListener("click", clearOutput);
 
-function renderResult(tile) {
-  const url = URL.createObjectURL(tile.blob);
+function renderResults(tiles) {
   previewGrid.innerHTML = "";
   previewGrid.classList.add("has-image");
+  previewGrid.classList.toggle("multi-image", tiles.length > 1);
 
-  const imageTile = document.createElement("div");
-  imageTile.className = "image-tile";
+  tiles.forEach((tile, index) => {
+    const url = URL.createObjectURL(tile.blob);
+    const imageTile = document.createElement("div");
+    imageTile.className = "image-tile";
 
-  const img = new Image();
-  img.src = url;
-  img.alt = currentMode === "image" ? "Edited image" : "Generated image";
-  img.onload = () => URL.revokeObjectURL(url);
+    const img = new Image();
+    img.src = url;
+    img.alt = currentMode === "image" ? "Edited image" : `Generated image ${index + 1}`;
+    img.onload = () => URL.revokeObjectURL(url);
 
-  const footer = document.createElement("div");
-  footer.className = "tile-footer";
+    const footer = document.createElement("div");
+    footer.className = "tile-footer";
 
-  const seed = document.createElement("span");
-  seed.textContent = `Seed ${tile.seed ?? "-"}`;
+    const seed = document.createElement("span");
+    const imageLabel = tiles.length > 1 ? ` · Image ${index + 1}` : "";
+    seed.textContent = `Seed ${tile.seed ?? "-"}${imageLabel}`;
 
-  const button = document.createElement("button");
-  button.className = "tile-download";
-  button.type = "button";
-  button.title = "Download image";
-  button.setAttribute("aria-label", "Download image");
-  button.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>`;
-  button.addEventListener("click", () => downloadBlob(tile.blob, tile.seed));
+    const button = document.createElement("button");
+    button.className = "tile-download";
+    button.type = "button";
+    button.title = "Download image";
+    button.setAttribute("aria-label", `Download image ${index + 1}`);
+    button.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>`;
+    button.addEventListener("click", () => downloadBlob(tile.blob, tile.seed, index));
 
-  footer.append(seed, button);
-  imageTile.append(img, footer);
-  previewGrid.appendChild(imageTile);
+    footer.append(seed, button);
+    imageTile.append(img, footer);
+    previewGrid.appendChild(imageTile);
+  });
 }
 
 async function readImageResponse(res) {
@@ -380,7 +390,39 @@ async function readImageResponse(res) {
   return { blob, seed: seedHeader !== null ? Number(seedHeader) : null };
 }
 
-async function fetchTextImage() {
+function base64ToBlob(encoded, mimeType = "image/png") {
+  const binary = atob(encoded);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new Blob([bytes], { type: mimeType });
+}
+
+async function readImagesResponse(res) {
+  if (!res.ok) {
+    let detail = "Request failed.";
+    try {
+      const err = await res.json();
+      detail = err.detail || JSON.stringify(err);
+    } catch (_) {}
+    throw new Error(detail);
+  }
+
+  const result = await res.json();
+  const encodedImages = result.images_base64?.length
+    ? result.images_base64
+    : [result.image_base64].filter(Boolean);
+  if (!encodedImages.length) {
+    throw new Error("No images were returned.");
+  }
+  return encodedImages.map((encoded) => ({
+    blob: base64ToBlob(encoded, result.mime_type),
+    seed: result.seed,
+  }));
+}
+
+async function fetchTextImages() {
   normalizeTextInputs();
 
   const payload = {
@@ -393,15 +435,16 @@ async function fetchTextImage() {
     guidance_scale: Number($("guidance").value),
     seed: Number($("seed").value),
     model: $("model").value,
+    n: Number($("image-count").value),
   };
 
-  const res = await fetch("/generate/image", {
+  const res = await fetch("/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
-  return readImageResponse(res);
+  return readImagesResponse(res);
 }
 
 async function fetchEditedImage() {
@@ -444,13 +487,18 @@ async function runImageJob() {
   setStatus(currentMode === "image" ? "Editing image..." : "Generating image...");
 
   try {
-    const tile = currentMode === "image" ? await fetchEditedImage() : await fetchTextImage();
-    generatedTile = tile;
-    renderResult(tile);
+    const tiles = currentMode === "image"
+      ? [await fetchEditedImage()]
+      : await fetchTextImages();
+    generatedTiles = tiles;
+    renderResults(tiles);
     downloadBtn.disabled = false;
     clearBtn.disabled = false;
-    setStatus(currentMode === "image" ? "Image edited." : "Image generated.", "success");
-    showToast(currentMode === "image" ? "Image edited." : "Image generated.", "success");
+    const successMessage = currentMode === "image"
+      ? "Image edited."
+      : `${tiles.length} ${tiles.length === 1 ? "image" : "images"} generated.`;
+    setStatus(successMessage, "success");
+    showToast(successMessage, "success");
     setTimeout(() => setStatus(""), 3500);
   } catch (err) {
     const message = err.message || "Image request failed.";
@@ -471,5 +519,6 @@ document.addEventListener("keydown", (event) => {
 });
 
 applyRatio("1:1");
+updateImageCountSlider();
 updateCounter();
 setMode("text");

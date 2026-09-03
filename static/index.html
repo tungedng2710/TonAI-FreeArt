@@ -91,7 +91,7 @@
           </select>
         </div>
 
-        <div class="row">
+        <div class="row row-3">
           <div class="field-group">
             <label for="width">Width <span class="label-hint">px</span></label>
             <input id="width" type="number" min="256" max="1536" step="16" value="1024" />
@@ -99,6 +99,16 @@
           <div class="field-group">
             <label for="height">Height <span class="label-hint">px</span></label>
             <input id="height" type="number" min="256" max="1536" step="16" value="1024" />
+          </div>
+          <div class="field-group">
+            <div class="label-row">
+              <label for="image-count">Images</label>
+              <output id="image-count-value" class="range-value" for="image-count">1</output>
+            </div>
+            <input id="image-count" class="image-count-range" type="range" min="1" max="4" step="1" value="1" aria-valuetext="1 image" />
+            <div class="range-scale" aria-hidden="true">
+              <span>1</span><span>2</span><span>3</span><span>4</span>
+            </div>
           </div>
         </div>
 
