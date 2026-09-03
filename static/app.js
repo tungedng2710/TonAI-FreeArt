@@ -79,7 +79,7 @@ const PLACEHOLDER_HTML = `
 
 function initTheme() {
   const saved = localStorage.getItem("tonai_theme");
-  document.documentElement.setAttribute("data-theme", saved || "dark");
+  document.documentElement.setAttribute("data-theme", saved || "light");
 }
 
 initTheme();
