@@ -77,6 +77,8 @@ def _run_edit(req: ImageEditRequest):
         result = ENGINE.edit(req)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except VLLMOmniError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return result.image, result.seed
 
@@ -133,7 +135,8 @@ def health():
         "generation_backend": "vllm-omni",
         "generation_server": ENGINE.generation_server,
         "current_edit_model": ENGINE.current_edit_model,
-        "cuda_available": ENGINE.cuda_available,
+        "image_edit_backend": "vllm-omni",
+        "image_edit_server": ENGINE.edit_server,
         "image_edit_model": DEFAULT_EDIT_MODEL_NAME,
     }
 

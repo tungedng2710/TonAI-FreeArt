@@ -1,6 +1,6 @@
 # TonAI-FreeArt 🎨
 
-A FastAPI image generation application using a remote vLLM-Omni text-to-image service and a local Diffusers image-editing pipeline.
+A FastAPI image generation application using remote vLLM-Omni services for text-to-image generation and image editing.
 
 🚀 **[Try the Live Demo](https://7863--main--idp--tungn197.coder.vts-ai.space/)**
 
@@ -11,14 +11,13 @@ A FastAPI image generation application using a remote vLLM-Omni text-to-image se
 - **RESTful API**: Easy-to-use API endpoints for integration
 - **Web Interface**: Built-in web UI for interactive image generation
 - **Flexible Configuration**: Customizable image dimensions, inference steps, and guidance
-- **GPU Acceleration**: CUDA is only needed locally for image editing
+- **Lightweight Application**: No local model or GPU is required
 - **Seed Control**: Reproducible results with seed management
 
 ## Requirements
 
 - Python 3.8+
 - Access to a vLLM-Omni image generation server
-- CUDA-compatible GPU for image editing (optional for text-to-image)
 
 ## Installation
 
@@ -47,6 +46,11 @@ The server will start on `http://localhost:7863`
 Text-to-image requests use `VLLM_OMNI_URL`, which defaults to
 `http://8091--main--frontier--idp-lab.coder.vts-ai.space`. You can also set
 `VLLM_OMNI_API_KEY` and `VLLM_OMNI_TIMEOUT_SECONDS` when required by the server.
+
+Image-edit requests use `VLLM_OMNI_EDIT_URL`, which defaults to
+`https://8092--main--frontier--idp-lab.coder.vts-ai.space`. If it requires a
+separate credential, set `VLLM_OMNI_EDIT_API_KEY`; otherwise it falls back to
+`VLLM_OMNI_API_KEY`.
 
 ### Web Interface
 
@@ -152,7 +156,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Built with [FastAPI](https://fastapi.tiangolo.com/)
 - Text-to-image powered by vLLM-Omni and Qwen-Image
-- Image editing powered by [Hugging Face Diffusers](https://github.com/huggingface/diffusers)
+- Image editing powered by vLLM-Omni and Qwen-Image-Edit
 
 ---
 
