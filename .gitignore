@@ -164,6 +164,7 @@ webapp/rtsp_url.json
 !**/service_urls.example.json
 *.md
 *.png
+!static/logo.png
 app*/
 !app/app_document_analysis/service_urls.example.json
 output*/

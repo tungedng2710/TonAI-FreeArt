@@ -23,6 +23,7 @@ from engine import (
     ImageEditRequest,
     ImageGenerationEngine,
     ImageGenerationRequest,
+    VLLMOmniError,
 )
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -35,7 +36,8 @@ class GenerateRequest(BaseModel):
     negative_prompt: str = Field(default="", description="Optional negative prompt.")
     width: int = Field(default=1024, ge=256, le=1536, multiple_of=16)
     height: int = Field(default=1024, ge=256, le=1536, multiple_of=16)
-    num_inference_steps: int = Field(default=9, ge=1, le=30)
+    num_inference_steps: int = Field(default=20, ge=1, le=100)
+    true_cfg_scale: float = Field(default=4.0, ge=0.0, le=20.0)
     guidance_scale: float = Field(default=0.0, ge=0.0, le=20.0)
     seed: int = Field(default=42, description="Use -1 for random seed.")
     model: str = Field(default=DEFAULT_MODEL_NAME, description="Model to use")
@@ -56,6 +58,7 @@ def _run_generation(req: GenerateRequest):
                 width=req.width,
                 height=req.height,
                 num_inference_steps=req.num_inference_steps,
+                true_cfg_scale=req.true_cfg_scale,
                 guidance_scale=req.guidance_scale,
                 seed=req.seed,
                 model=req.model,
@@ -63,6 +66,8 @@ def _run_generation(req: GenerateRequest):
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except VLLMOmniError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return result.image, result.seed
 
@@ -106,9 +111,9 @@ def root():
     return FileResponse(STATIC_DIR / "index.html")
 
 
-@app.get("/favicon.svg", include_in_schema=False)
+@app.get("/favicon.ico", include_in_schema=False)
 def favicon():
-    return FileResponse(STATIC_DIR / "favicon.svg", media_type="image/svg+xml")
+    return FileResponse(STATIC_DIR / "favicon.ico", media_type="image/x-icon")
 
 
 @app.get("/sw.js", include_in_schema=False)
@@ -125,6 +130,8 @@ def health():
     return {
         "status": "ok",
         "current_model": ENGINE.current_model,
+        "generation_backend": "vllm-omni",
+        "generation_server": ENGINE.generation_server,
         "current_edit_model": ENGINE.current_edit_model,
         "cuda_available": ENGINE.cuda_available,
         "image_edit_model": DEFAULT_EDIT_MODEL_NAME,

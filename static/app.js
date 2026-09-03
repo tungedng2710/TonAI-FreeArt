@@ -54,7 +54,7 @@ const MODE_CONFIG = {
     subtitle: "Generated image",
     action: "Generate",
     prompt: "A cinematic portrait of a jazz pianist in a small club, warm stage light, 35mm film grain",
-    steps: 9,
+    steps: 20,
     examples: [],
   },
   image: {
@@ -389,6 +389,7 @@ async function fetchTextImage() {
     width: Number(widthInput.value),
     height: Number(heightInput.value),
     num_inference_steps: Number($("steps").value),
+    true_cfg_scale: 4.0,
     guidance_scale: Number($("guidance").value),
     seed: Number($("seed").value),
     model: $("model").value,

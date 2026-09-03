@@ -5,6 +5,9 @@ services:
       - "7863:7863"
     environment:
       HF_HOME: /cache/huggingface
+      VLLM_OMNI_URL: ${VLLM_OMNI_URL:-http://8091--main--frontier--idp-lab.coder.vts-ai.space}
+      VLLM_OMNI_API_KEY: ${VLLM_OMNI_API_KEY:-}
+      VLLM_OMNI_TIMEOUT_SECONDS: ${VLLM_OMNI_TIMEOUT_SECONDS:-1800}
     volumes:
       - huggingface-cache:/cache/huggingface
     # Enable this block on hosts with the NVIDIA Container Toolkit installed.

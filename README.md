@@ -1,24 +1,24 @@
 # TonAI-FreeArt 🎨
 
-A fast and efficient AI-powered image generation API built with FastAPI and Diffusion Models. Generate high-quality images from text prompts using state-of-the-art diffusion models.
+A FastAPI image generation application using a remote vLLM-Omni text-to-image service and a local Diffusers image-editing pipeline.
 
 🚀 **[Try the Live Demo](https://7863--main--idp--tungn197.coder.vts-ai.space/)**
 
 ## Features
 
-- **Fast Image Generation**: Powered by Z-Image-Turbo diffusion model
+- **Remote Image Generation**: Powered by Qwen-Image through vLLM-Omni
 - **Image Editing**: Upload a source image and edit it with Qwen-Image-Edit
 - **RESTful API**: Easy-to-use API endpoints for integration
 - **Web Interface**: Built-in web UI for interactive image generation
 - **Flexible Configuration**: Customizable image dimensions, inference steps, and guidance
-- **GPU Acceleration**: Optimized for CUDA-enabled GPUs
+- **GPU Acceleration**: CUDA is only needed locally for image editing
 - **Seed Control**: Reproducible results with seed management
 
 ## Requirements
 
 - Python 3.8+
-- CUDA-compatible GPU (recommended)
-- At least 8GB VRAM for optimal performance
+- Access to a vLLM-Omni image generation server
+- CUDA-compatible GPU for image editing (optional for text-to-image)
 
 ## Installation
 
@@ -44,6 +44,10 @@ python app.py
 
 The server will start on `http://localhost:7863`
 
+Text-to-image requests use `VLLM_OMNI_URL`, which defaults to
+`http://8091--main--frontier--idp-lab.coder.vts-ai.space`. You can also set
+`VLLM_OMNI_API_KEY` and `VLLM_OMNI_TIMEOUT_SECONDS` when required by the server.
+
 ### Web Interface
 
 Open your browser and navigate to:
@@ -64,10 +68,11 @@ Request body:
   "negative_prompt": "",
   "width": 1024,
   "height": 1024,
-  "num_inference_steps": 9,
+  "num_inference_steps": 20,
+  "true_cfg_scale": 4.0,
   "guidance_scale": 0.0,
   "seed": 42,
-  "model": "Z-Image-Turbo"
+  "model": "Qwen/Qwen-Image-2512"
 }
 ```
 
@@ -110,24 +115,22 @@ Interactive API documentation is available at:
 - **negative_prompt** (optional): What to avoid in the generated image
 - **width**: Image width (256-1536, must be multiple of 16)
 - **height**: Image height (256-1536, must be multiple of 16)
-- **num_inference_steps**: Number of denoising steps (1-30)
+- **num_inference_steps**: Number of denoising steps (1-100)
+- **true_cfg_scale**: Qwen-Image true classifier-free guidance scale (0.0-20.0)
 - **guidance_scale**: Classifier-free guidance scale (0.0-20.0)
 - **seed**: Random seed for reproducibility (-1 for random)
-- **model**: Model identifier (default: "Z-Image-Turbo")
-- **true_cfg_scale**: Qwen image editing guidance scale (0.0-20.0)
+- **model**: Model identifier (default: `Qwen/Qwen-Image-2512`)
 
 ## Models
 
 Currently supported models:
-- **Z-Image-Turbo** (Tongyi-MAI/Z-Image-Turbo): Fast, high-quality image generation
+- **Qwen-Image** (Qwen/Qwen-Image-2512): Text-to-image generation through vLLM-Omni
 - **Qwen-Image-Edit** (Qwen/Qwen-Image-Edit): Image-to-image editing
-- **FLUX.2-dev** (black-forest-labs/FLUX.2-dev)
 
 ## Performance Tips
 
-- Use GPU acceleration for faster generation
-- Reduce `num_inference_steps` for faster results (default: 9)
-- Set `guidance_scale` to 0.0 for Turbo models
+- Scale the vLLM-Omni service independently from this web application
+- Reduce `num_inference_steps` for faster results (default: 20)
 - Use smaller image dimensions for quicker generation
 
 ## Contributing
@@ -148,8 +151,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - Built with [FastAPI](https://fastapi.tiangolo.com/)
-- Powered by [Hugging Face Diffusers](https://github.com/huggingface/diffusers)
-- Model: [Tongyi-MAI/Z-Image-Turbo](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo)
+- Text-to-image powered by vLLM-Omni and Qwen-Image
+- Image editing powered by [Hugging Face Diffusers](https://github.com/huggingface/diffusers)
 
 ---
 

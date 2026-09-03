@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="TonAI FreeArt image generation and editing workspace." />
   <title>TonAI FreeArt</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <img class="brand-icon" src="https://raw.githubusercontent.com/tungedng2710/tungedng2710.github.io/main/assets/images/logo.png" alt="TonAI logo" />
+        <img class="brand-icon" src="/static/logo.png" alt="TonAI logo" />
         <div>
           <span class="brand-name">TonAI FreeArt</span>
           <span id="mode-chip" class="mode-chip">Text to Image</span>
@@ -102,7 +102,7 @@
           </div>
         </div>
 
-        <input id="model" type="hidden" value="Z-Image-Turbo" />
+        <input id="model" type="hidden" value="Qwen/Qwen-Image-2512" />
       </div>
 
       <div id="edit-settings" class="hidden">
@@ -116,7 +116,7 @@
         </div>
         <div class="field-group">
           <label for="steps">Steps</label>
-          <input id="steps" type="number" min="1" max="100" step="1" value="9" />
+          <input id="steps" type="number" min="1" max="100" step="1" value="20" />
         </div>
         <div id="true-cfg-field" class="field-group hidden">
           <label for="true-cfg">CFG <span class="label-hint">0-20</span></label>
@@ -164,7 +164,7 @@
 
   <footer class="footer">
     <span>TonAI FreeArt &copy; 2026</span>
-    <span>Powered by local diffusion models</span>
+    <span>Powered by vLLM-Omni</span>
     <span>Made by <a href="https://tungedng2710.github.io/" target="_blank" rel="noopener noreferrer">tungedng2710</a></span>
   </footer>
 
