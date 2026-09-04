@@ -5,7 +5,9 @@ services:
       - "7863:7863"
     environment:
       VLLM_OMNI_URL: ${VLLM_OMNI_URL:-http://8091--main--frontier--idp-lab.coder.vts-ai.space}
+      VLLM_OMNI_MODEL_NAME: ${VLLM_OMNI_MODEL_NAME:-Qwen/Qwen-Image-2512}
       VLLM_OMNI_EDIT_URL: ${VLLM_OMNI_EDIT_URL:-https://8092--main--frontier--idp-lab.coder.vts-ai.space}
+      VLLM_OMNI_EDIT_MODEL_NAME: ${VLLM_OMNI_EDIT_MODEL_NAME:-Qwen/Qwen-Image-Edit}
       VLLM_OMNI_API_KEY: ${VLLM_OMNI_API_KEY:-}
       VLLM_OMNI_EDIT_API_KEY: ${VLLM_OMNI_EDIT_API_KEY:-}
       VLLM_OMNI_TIMEOUT_SECONDS: ${VLLM_OMNI_TIMEOUT_SECONDS:-1800}
