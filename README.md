@@ -1,4 +1,4 @@
-# TonAI-FreeArt 🎨
+# TonAI Imagine
 
 A FastAPI image generation application using remote vLLM-Omni services for text-to-image generation and image editing.
 
