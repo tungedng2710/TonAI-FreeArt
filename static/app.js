@@ -26,6 +26,7 @@ const trueCfgField = $("true-cfg-field");
 const modeChip = $("mode-chip");
 const outputTitle = $("output-title");
 const outputSubtitle = $("output-subtitle");
+const examplesPanel = $("examples-panel");
 const examplesEl = document.querySelector(".example-prompts");
 const imageCountInput = $("image-count");
 const imageCountValue = $("image-count-value");
@@ -34,12 +35,66 @@ let currentMode = "text";
 let generatedTiles = [];
 let sourceObjectUrls = [];
 const textPromptExamples = [
-  "Editorial portrait of a stylish young adult East Asian woman in an oversized cream blazer and silk camisole, minimalist studio, soft window light, luxury fashion magazine aesthetic",
-  "A fashionable young adult Korean woman wearing layered Seoul streetwear, cropped bomber jacket, pleated skirt and statement sneakers, neon city evening, cinematic photography",
-  "Elegant young adult Japanese woman in a sculptural black couture dress with silver accessories, clean gallery interior, dramatic side lighting, high-fashion editorial portrait",
-  "Beautiful young adult Vietnamese woman wearing a contemporary pastel ao dai with delicate modern tailoring, sunlit architectural courtyard, graceful fashion campaign, realistic detail",
-  "Young adult Asian woman in a chic monochrome pantsuit, sleek ponytail and minimalist jewelry, modern glass office lobby, confident pose, polished commercial fashion photography",
-  "Glamorous young adult Asian woman in an emerald evening gown with refined beadwork, grand hotel entrance at night, warm cinematic lighting, sophisticated red-carpet fashion portrait",
+  {
+    title: "Ivory Editorial",
+    category: "Women",
+    image: "/static/examples/woman-editorial.webp",
+    prompt: "Editorial portrait of a poised Vietnamese woman in a sculptural ivory silk ao dai with subtle pearl embroidery, standing beneath curved brutalist concrete arches after rain; reflective courtyard, distant tropical foliage and faint mist; photorealistic luxury fashion editorial with natural skin texture and refined magazine color grading; square waist-up three-quarter pose, 85mm lens, shallow depth of field; soft overcast daylight with a warm rim light; ivory, cool concrete gray and muted jade palette.",
+  },
+  {
+    title: "Neon Monsoon",
+    category: "Women",
+    image: "/static/examples/woman-neon.webp",
+    prompt: "Cinematic portrait of an adult East Asian woman with a sharp bob haircut wearing layered charcoal streetwear and a translucent raincoat in a neon-lit night market; rain-slick alley, steam drifting from food stalls and abstract out-of-focus signs; photorealistic 35mm street-fashion photography with fine film grain; square dynamic chest-up angle, subject slightly off-center, shallow depth of field; cyan and magenta reflections with soft tungsten highlights; energetic yet introspective mood.",
+  },
+  {
+    title: "Cobalt Couture",
+    category: "Women",
+    image: "/static/examples/woman-couture.webp",
+    prompt: "High-fashion portrait of an adult Black woman in an architectural cobalt couture gown with pleated shoulders and brushed silver jewelry; vast minimalist gallery with pale stone walls and a single geometric sculpture; photorealistic museum-quality fashion campaign with crisp textile detail; square full three-quarter figure in a symmetrical editorial composition, medium-format camera look; dramatic skylight creating long clean shadows; cobalt blue, limestone, silver and deep umber palette.",
+  },
+  {
+    title: "Wildflower Light",
+    category: "Women",
+    image: "/static/examples/woman-sunlight.webp",
+    prompt: "Intimate lifestyle portrait of an adult South Asian woman in a rust linen dress arranging wildflowers beside an open window in an old artist studio; limewashed walls, ceramic vessels, moving linen curtains and visible dust motes; photorealistic analog editorial photography with tactile natural textures; square candid waist-up composition, 50mm lens, foreground flowers framing the subject; late-afternoon honeyed sunlight; warm, quiet and contemplative terracotta, ochre, cream and dusty-green palette.",
+  },
+  {
+    title: "Cliff House",
+    category: "Architecture",
+    image: "/static/examples/cliff-house.webp",
+    prompt: "A cantilevered concrete house embedded into a windswept Atlantic cliff, warm interior light glowing through panoramic glass; black rock coast, churning sea far below, low storm clouds and thin rain; photorealistic architectural visualization with cinematic realism; square aerial three-quarter view emphasizing scale, structure and geometry; blue-hour storm light contrasted with amber interiors; slate blue, wet charcoal and warm gold palette; plausible engineering, weathered materials, no people.",
+  },
+  {
+    title: "Fox Astronomer",
+    category: "Illustration",
+    image: "/static/examples/fox-library.webp",
+    prompt: "A small red fox librarian cataloguing glowing constellations inside an ancient circular observatory library; towering walnut bookshelves, brass orrery, spiral stairs and a domed ceiling open to a star-filled sky; richly textured storybook gouache and colored-pencil illustration; square composition with the fox at a desk in the lower center and sweeping shelves creating a circular frame; candlelight mixed with cool starlight; whimsical, scholarly and magical midnight-blue, copper and warm-gold palette.",
+  },
+  {
+    title: "Midnight Ramen",
+    category: "Food",
+    image: "/static/examples/ramen-still-life.webp",
+    prompt: "Elevated overhead food photograph of handmade miso ramen with charred corn, soft egg, shiitake mushrooms, scallions, chili oil and crisp nori; dark walnut table with a folded indigo napkin, chopsticks and tiny ceramic condiment dishes; premium restaurant campaign photography with ultra-real food texture; square top-down flat lay with balanced asymmetry and subtle negative space; soft directional window light; lacquer black, amber broth, yolk gold, deep green and indigo palette.",
+  },
+  {
+    title: "Two-Moon Rover",
+    category: "Sci-fi",
+    image: "/static/examples/desert-rover.webp",
+    prompt: "A compact solar exploration rover crossing a vast red desert beneath two pale moons while a distant crystalline dust storm rises; layered sandstone mesas, rippled dunes and scattered black volcanic glass; cinematic hard-science-fiction concept art with realistic engineering and atmospheric depth; square wide-angle low viewpoint, rover in the lower third beneath a monumental sky; cold dawn light with long violet shadows; lonely, exploratory and awe-inspiring rust-red, pale-cyan and matte-white palette.",
+  },
+  {
+    title: "Rainforest Jewel",
+    category: "Wildlife",
+    image: "/static/examples/glass-frog.webp",
+    prompt: "Macro photograph of a translucent glass frog perched on a rain-covered emerald leaf, tiny toes gripping the edge; cloud-forest understory dissolving into creamy bokeh with suspended droplets; scientifically believable wildlife macro photography with exquisite micro-detail; square extreme close-up at eye level, frog centered on a diagonal leaf line; diffused rainforest light with luminous backlighting through the leaf; delicate and mysterious emerald, lime, translucent mint and silver palette.",
+  },
+  {
+    title: "Last Set",
+    category: "Music",
+    image: "/static/examples/jazz-cellar.webp",
+    prompt: "An elderly jazz pianist performing alone in a tiny underground club as the last audience members listen in silence; worn upright piano, brick cellar walls, small round tables and faint stage haze; cinematic documentary photography with 35mm film grain and authentic aged textures; square intimate side view, pianist and keyboard forming a diagonal, listeners softly blurred behind; a single warm spotlight against deep blue ambient shadows; soulful tobacco-brown, brass-gold and burgundy palette.",
+  },
 ];
 
 const MANUAL_MIN = 256;
@@ -181,24 +236,37 @@ function renderExamples() {
   const config = MODE_CONFIG[currentMode];
   const examples = currentMode === "text" ? textPromptExamples : config.examples;
   examplesEl.innerHTML = "";
-  examplesEl.classList.toggle("hidden", examples.length === 0);
+  examplesPanel.classList.toggle("hidden", examples.length === 0);
 
-  examples.forEach((promptText, index) => {
+  examples.forEach((example) => {
     const card = document.createElement("button");
     card.className = "example-card";
     card.type = "button";
-    card.title = promptText;
-    card.setAttribute("aria-label", `Use example prompt ${index + 1}: ${promptText}`);
+    card.title = example.prompt;
+    card.setAttribute("aria-label", `Use ${example.title} example prompt`);
 
-    const text = document.createElement("span");
-    text.className = "example-card-text";
-    text.textContent = promptText;
+    const image = new Image();
+    image.className = "example-card-image";
+    image.src = example.image;
+    image.alt = "";
+    image.loading = "lazy";
 
-    card.append(text);
+    const caption = document.createElement("span");
+    caption.className = "example-card-caption";
+    const category = document.createElement("span");
+    category.className = "example-card-category";
+    category.textContent = example.category;
+    const title = document.createElement("span");
+    title.className = "example-card-title";
+    title.textContent = example.title;
+    caption.append(category, title);
+
+    card.append(image, caption);
     card.addEventListener("click", () => {
-      promptEl.value = promptText;
+      promptEl.value = example.prompt;
       updateCounter();
       promptEl.focus();
+      showToast(`Loaded “${example.title}” prompt.`, "success", 2200);
     });
     examplesEl.appendChild(card);
   });

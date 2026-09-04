@@ -227,7 +227,7 @@ svg {
   margin: 0 auto;
   padding: 20px 20px 14px;
   display: grid;
-  grid-template-columns: minmax(400px, 500px) minmax(0, 1fr);
+  grid-template-columns: minmax(360px, 460px) minmax(420px, 1fr) minmax(248px, 300px);
   gap: 20px;
 }
 
@@ -258,6 +258,128 @@ svg {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.examples-panel {
+  height: calc(100dvh - 104px);
+  min-height: 620px;
+  padding: 16px;
+  align-self: start;
+  overflow: auto;
+}
+
+.examples-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.examples-head h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.examples-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.examples-count {
+  min-width: 28px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--panel-solid));
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--line));
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.example-prompts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.example-card {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  color: #ffffff;
+  background: #111111;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  box-shadow: 0 8px 22px var(--glass-shadow);
+  cursor: pointer;
+  text-align: left;
+  isolation: isolate;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.example-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px var(--glass-shadow);
+}
+
+.example-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 50%, transparent);
+  outline-offset: 2px;
+}
+
+.example-card-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 300ms ease;
+}
+
+.example-card:hover .example-card-image {
+  transform: scale(1.045);
+}
+
+.example-card-caption {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 1;
+  display: grid;
+  gap: 1px;
+  padding: 22px 9px 8px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.82));
+}
+
+.example-card-category {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.example-card-title {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 780;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 1181px) {
+  body[data-mode="image"] .output-panel {
+    grid-column: 2 / -1;
+  }
 }
 
 .mode-tabs {
@@ -562,48 +684,6 @@ input.image-count-range:focus-visible {
 .text-btn:disabled {
   opacity: 0.45;
   cursor: default;
-}
-
-.example-prompts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.example-card {
-  display: inline-flex;
-  align-items: center;
-  max-width: 100%;
-  min-width: 0;
-  height: 34px;
-  padding: 0 12px;
-  overflow: hidden;
-  color: var(--muted);
-  background: var(--panel-soft);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  box-shadow: inset 0 1px 0 var(--glass-highlight);
-  backdrop-filter: blur(12px);
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
-}
-
-.example-card:hover {
-  color: var(--primary);
-  border-color: var(--primary);
-}
-
-.example-card-text {
-  display: block;
-  max-width: 24ch;
-  overflow: hidden;
-  font-size: 12px;
-  font-weight: 650;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .ratio-grid {
@@ -989,9 +1069,9 @@ input.image-count-range:focus-visible {
   text-underline-offset: 2px;
 }
 
-@media (max-width: 1120px) {
+@media (max-width: 1180px) {
   .workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
   }
 
   .controls-panel {
@@ -1001,6 +1081,16 @@ input.image-count-range:focus-visible {
   .output-panel {
     height: 560px;
     min-height: 0;
+  }
+
+  .examples-panel {
+    grid-column: 1 / -1;
+    height: auto;
+    min-height: 0;
+  }
+
+  .example-prompts {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
@@ -1014,6 +1104,7 @@ input.image-count-range:focus-visible {
   .workspace {
     padding: 12px 12px 14px;
     gap: 12px;
+    grid-template-columns: 1fr;
   }
 
   .topbar-inner {
@@ -1046,9 +1137,12 @@ input.image-count-range:focus-visible {
 
   .mode-tabs,
   .row,
-  .row-3,
-  .example-prompts {
+  .row-3 {
     grid-template-columns: 1fr;
+  }
+
+  .example-prompts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .ratio-grid {
