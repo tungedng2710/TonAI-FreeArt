@@ -11,6 +11,16 @@ from typing import Any
 
 import requests
 from PIL import Image, UnidentifiedImageError
+from dotenv import load_dotenv
+
+
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / ".env")
+
+# Keep GPU selection configurable for deployments that attach a GPU to this
+# process. TonAI itself currently performs inference through remote APIs only.
+GPU_ID = os.getenv("GPU_ID", "0")
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", GPU_ID)
 
 DEFAULT_MODEL_NAME = "Qwen/Qwen-Image-2512"
 DEFAULT_MODEL_ID = DEFAULT_MODEL_NAME

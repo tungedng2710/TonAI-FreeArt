@@ -32,6 +32,14 @@ cd TonAI-FreeArt
 pip install -r requirements.txt
 ```
 
+3. Create your local configuration:
+```bash
+cp .env.example .env
+```
+
+Edit `.env` if your vLLM-Omni endpoints or GPU selection differ from the
+defaults. The `.env` file is ignored by Git; `.env.example` is safe to commit.
+
 ## Usage
 
 ### Starting the Server
@@ -43,7 +51,8 @@ python app.py
 
 The server will start on `http://localhost:7863`
 
-Text-to-image requests use `VLLM_OMNI_URL`, which defaults to
+Configuration is loaded automatically from `.env`. Text-to-image requests use
+`VLLM_OMNI_URL`, which defaults to
 `http://8091--main--frontier--idp-lab.coder.vts-ai.space`. You can also set
 `VLLM_OMNI_API_KEY` and `VLLM_OMNI_TIMEOUT_SECONDS` when required by the server.
 
@@ -51,6 +60,15 @@ Image-edit requests use `VLLM_OMNI_EDIT_URL`, which defaults to
 `https://8092--main--frontier--idp-lab.coder.vts-ai.space`. If it requires a
 separate credential, set `VLLM_OMNI_EDIT_API_KEY`; otherwise it falls back to
 `VLLM_OMNI_API_KEY`.
+
+`GPU_ID` is copied to `CUDA_VISIBLE_DEVICES` for local or container deployments.
+This API-only app does not perform inference itself, so selecting the GPUs used
+by a remote vLLM-Omni server must be done in that server's environment.
+
+Docker Compose reads the same `.env` automatically:
+```bash
+docker compose up --build
+```
 
 ### Web Interface
 
@@ -117,6 +135,15 @@ Interactive API documentation is available at:
 - ReDoc: `http://localhost:7863/redoc`
 
 ## Configuration
+
+Environment variables are documented in `.env.example`:
+
+- **VLLM_OMNI_URL**: Text-to-image vLLM-Omni base URL
+- **VLLM_OMNI_EDIT_URL**: Image-to-image vLLM-Omni base URL
+- **VLLM_OMNI_API_KEY**: Optional text-to-image API key
+- **VLLM_OMNI_EDIT_API_KEY**: Optional image-edit API key; falls back to the main key
+- **VLLM_OMNI_TIMEOUT_SECONDS**: Remote request timeout in seconds
+- **GPU_ID**: Device ID exposed as `CUDA_VISIBLE_DEVICES`
 
 ### Parameters
 
