@@ -245,8 +245,8 @@ svg {
 
 .controls-panel {
   padding: 20px;
+  height: calc(100dvh - 104px);
   align-self: start;
-  max-height: calc(100dvh - 104px);
   overflow: auto;
 }
 
@@ -1075,6 +1075,7 @@ input.image-count-range:focus-visible {
   }
 
   .controls-panel {
+    height: 560px;
     max-height: none;
   }
 
@@ -1133,6 +1134,10 @@ input.image-count-range:focus-visible {
   .controls-panel,
   .output-panel {
     padding: 12px;
+  }
+
+  .controls-panel {
+    height: auto;
   }
 
   .mode-tabs,
