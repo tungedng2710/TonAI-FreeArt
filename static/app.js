@@ -37,25 +37,25 @@ let sourceObjectUrls = [];
 const textPromptExamples = [
   {
     title: "Ivory Editorial",
-    category: "Women",
+    category: "Person",
     image: "/static/examples/woman-editorial.webp",
     prompt: "Editorial portrait of a poised Vietnamese woman in a sculptural ivory silk ao dai with subtle pearl embroidery, standing beneath curved brutalist concrete arches after rain; reflective courtyard, distant tropical foliage and faint mist; photorealistic luxury fashion editorial with natural skin texture and refined magazine color grading; square waist-up three-quarter pose, 85mm lens, shallow depth of field; soft overcast daylight with a warm rim light; ivory, cool concrete gray and muted jade palette.",
   },
   {
     title: "Neon Monsoon",
-    category: "Women",
+    category: "Person",
     image: "/static/examples/woman-neon.webp",
     prompt: "Cinematic portrait of an adult East Asian woman with a sharp bob haircut wearing layered charcoal streetwear and a translucent raincoat in a neon-lit night market; rain-slick alley, steam drifting from food stalls and abstract out-of-focus signs; photorealistic 35mm street-fashion photography with fine film grain; square dynamic chest-up angle, subject slightly off-center, shallow depth of field; cyan and magenta reflections with soft tungsten highlights; energetic yet introspective mood.",
   },
   {
     title: "Cobalt Couture",
-    category: "Women",
+    category: "Person",
     image: "/static/examples/woman-couture.webp",
     prompt: "High-fashion portrait of an adult Black woman in an architectural cobalt couture gown with pleated shoulders and brushed silver jewelry; vast minimalist gallery with pale stone walls and a single geometric sculpture; photorealistic museum-quality fashion campaign with crisp textile detail; square full three-quarter figure in a symmetrical editorial composition, medium-format camera look; dramatic skylight creating long clean shadows; cobalt blue, limestone, silver and deep umber palette.",
   },
   {
     title: "Wildflower Light",
-    category: "Women",
+    category: "Person",
     image: "/static/examples/woman-sunlight.webp",
     prompt: "Intimate lifestyle portrait of an adult South Asian woman in a rust linen dress arranging wildflowers beside an open window in an old artist studio; limewashed walls, ceramic vessels, moving linen curtains and visible dust motes; photorealistic analog editorial photography with tactile natural textures; square candid waist-up composition, 50mm lens, foreground flowers framing the subject; late-afternoon honeyed sunlight; warm, quiet and contemplative terracotta, ochre, cream and dusty-green palette.",
   },
@@ -67,33 +67,33 @@ const textPromptExamples = [
   },
   {
     title: "Fox Astronomer",
-    category: "Illustration",
+    category: "Wildlife",
     image: "/static/examples/fox-library.webp",
-    prompt: "A small red fox librarian cataloguing glowing constellations inside an ancient circular observatory library; towering walnut bookshelves, brass orrery, spiral stairs and a domed ceiling open to a star-filled sky; richly textured storybook gouache and colored-pencil illustration; square composition with the fox at a desk in the lower center and sweeping shelves creating a circular frame; candlelight mixed with cool starlight; whimsical, scholarly and magical midnight-blue, copper and warm-gold palette.",
+    prompt: "Photorealistic cinematic wildlife photograph of a real small red fox appearing to study an open constellation atlas inside an ancient circular observatory library; towering walnut bookshelves, brass orrery, spiral stairs and a domed ceiling open to a star-filled sky; lifelike fur, natural anatomy, realistic wood, brass and paper textures; square composition with the fox at a desk in the lower center and sweeping shelves forming a circular frame; practical candlelight mixed with cool starlight; magical yet physically plausible midnight-blue, copper and warm-gold palette; no clothes or human-like features.",
   },
   {
     title: "Midnight Ramen",
     category: "Food",
     image: "/static/examples/ramen-still-life.webp",
-    prompt: "Elevated overhead food photograph of handmade miso ramen with charred corn, soft egg, shiitake mushrooms, scallions, chili oil and crisp nori; dark walnut table with a folded indigo napkin, chopsticks and tiny ceramic condiment dishes; premium restaurant campaign photography with ultra-real food texture; square top-down flat lay with balanced asymmetry and subtle negative space; soft directional window light; lacquer black, amber broth, yolk gold, deep green and indigo palette.",
+    prompt: "Elevated overhead food photograph of handmade miso ramen with charred corn, soft egg, shiitake mushrooms, scallions, chili oil and crisp nori; dark walnut table with a folded indigo napkin, chopsticks and tiny ceramic condiment dishes; photorealistic premium restaurant campaign photography with authentic food texture; square top-down flat lay with balanced asymmetry and subtle negative space; soft directional window light; lacquer black, amber broth, yolk gold, deep green and indigo palette.",
   },
   {
     title: "Two-Moon Rover",
     category: "Sci-fi",
     image: "/static/examples/desert-rover.webp",
-    prompt: "A compact solar exploration rover crossing a vast red desert beneath two pale moons while a distant crystalline dust storm rises; layered sandstone mesas, rippled dunes and scattered black volcanic glass; cinematic hard-science-fiction concept art with realistic engineering and atmospheric depth; square wide-angle low viewpoint, rover in the lower third beneath a monumental sky; cold dawn light with long violet shadows; lonely, exploratory and awe-inspiring rust-red, pale-cyan and matte-white palette.",
+    prompt: "Photorealistic cinematic space-mission photograph of a compact solar exploration rover crossing a vast red desert beneath two pale moons while a distant crystalline dust storm rises; layered sandstone mesas, rippled dunes and scattered black volcanic glass; physically plausible engineering, weathered machinery, natural optics and realistic atmospheric depth; square wide-angle low viewpoint, rover in the lower third beneath a monumental sky; cold dawn light with long violet shadows; lonely, exploratory and awe-inspiring rust-red, pale-cyan and matte-white palette.",
   },
   {
     title: "Rainforest Jewel",
     category: "Wildlife",
     image: "/static/examples/glass-frog.webp",
-    prompt: "Macro photograph of a translucent glass frog perched on a rain-covered emerald leaf, tiny toes gripping the edge; cloud-forest understory dissolving into creamy bokeh with suspended droplets; scientifically believable wildlife macro photography with exquisite micro-detail; square extreme close-up at eye level, frog centered on a diagonal leaf line; diffused rainforest light with luminous backlighting through the leaf; delicate and mysterious emerald, lime, translucent mint and silver palette.",
+    prompt: "Photorealistic macro photograph of a translucent glass frog perched on a rain-covered emerald leaf, tiny toes gripping the edge; cloud-forest understory dissolving into creamy bokeh with suspended droplets; scientifically accurate wildlife photography with exquisite natural micro-detail; square extreme close-up at eye level, frog centered on a diagonal leaf line; diffused rainforest light with luminous backlighting through the leaf; delicate and mysterious emerald, lime, translucent mint and silver palette.",
   },
   {
     title: "Last Set",
     category: "Music",
     image: "/static/examples/jazz-cellar.webp",
-    prompt: "An elderly jazz pianist performing alone in a tiny underground club as the last audience members listen in silence; worn upright piano, brick cellar walls, small round tables and faint stage haze; cinematic documentary photography with 35mm film grain and authentic aged textures; square intimate side view, pianist and keyboard forming a diagonal, listeners softly blurred behind; a single warm spotlight against deep blue ambient shadows; soulful tobacco-brown, brass-gold and burgundy palette.",
+    prompt: "Photorealistic cinematic documentary photograph of an elderly jazz pianist performing alone in a tiny underground club as the last audience members listen in silence; worn upright piano, brick cellar walls, small round tables and faint stage haze; authentic 35mm film grain, natural skin and aged material textures; square intimate side view, pianist and keyboard forming a diagonal, listeners softly blurred behind; a single warm spotlight against deep blue ambient shadows; soulful tobacco-brown, brass-gold and burgundy palette.",
   },
 ];
 
