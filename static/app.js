@@ -225,11 +225,18 @@ function updateImageCountSlider() {
 imageCountInput.addEventListener("input", updateImageCountSlider);
 
 function updateCounter() {
-  const max = Number(promptEl.getAttribute("maxlength") || 700);
-  const len = promptEl.value.length;
-  promptCounter.textContent = `${len} / ${max}`;
+  const max = Number(promptEl.dataset.maxWords || 2000);
+  const words = Array.from(promptEl.value.matchAll(/\S+/gu));
+
+  if (words.length > max) {
+    const lastWord = words[max - 1];
+    promptEl.value = promptEl.value.slice(0, lastWord.index + lastWord[0].length);
+    words.length = max;
+  }
+
+  const len = words.length;
+  promptCounter.textContent = `${len} / ${max} words`;
   promptCounter.className =
-    len > max ? "char-counter over" :
     len > max * 0.85 ? "char-counter warn" :
     "char-counter";
 }
