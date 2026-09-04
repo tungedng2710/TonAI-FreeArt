@@ -182,10 +182,14 @@ function applyRatio(key) {
   if (!ratio) return;
 
   const [rw, rh] = ratio;
-  const fw = rw >= rh ? (PRESET_MIN * rw) / rh : PRESET_MIN;
-  const fh = rw >= rh ? PRESET_MIN : (PRESET_MIN * rh) / rw;
-  widthInput.value = String(snap(fw, PRESET_MIN));
-  heightInput.value = String(snap(fh, PRESET_MIN));
+  let fw = rw >= rh ? (PRESET_MIN * rw) / rh : PRESET_MIN;
+  let fh = rw >= rh ? PRESET_MIN : (PRESET_MIN * rh) / rw;
+  const scale = Math.min(1, MAX_SIZE / Math.max(fw, fh));
+
+  fw *= scale;
+  fh *= scale;
+  widthInput.value = String(snap(fw));
+  heightInput.value = String(snap(fh));
 }
 
 function normalizeTextInputs() {
