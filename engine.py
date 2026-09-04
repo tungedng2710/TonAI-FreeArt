@@ -18,7 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 # Keep GPU selection configurable for deployments that attach a GPU to this
-# process. TonAI itself currently performs inference through remote APIs only.
+# process. TonAI Imagine itself currently performs inference through remote APIs only.
 GPU_ID = os.getenv("GPU_ID", "0")
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", GPU_ID)
 
@@ -279,7 +279,7 @@ class ImageGenerationEngine:
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the TonAI generation engine.")
+    parser = argparse.ArgumentParser(description="Run the TonAI Imagine generation engine.")
     parser.add_argument("--prompt", required=True, help="Text prompt to generate from.")
     parser.add_argument("--negative-prompt", default="", help="Optional negative prompt.")
     parser.add_argument("--model", default=DEFAULT_MODEL_NAME, choices=sorted(MODEL_MAP))

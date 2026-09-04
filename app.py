@@ -1,5 +1,5 @@
 """
-TonAI Image Generator API
+TonAI Imagine API
 
 Author: https://tungedng2710.github.io/
 """
@@ -116,7 +116,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="TonAI Image Generator API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="TonAI Imagine API", version="1.0.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
