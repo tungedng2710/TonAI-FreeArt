@@ -515,7 +515,6 @@ async function fetchTextImages() {
     true_cfg_scale: 4.0,
     guidance_scale: Number($("guidance").value),
     seed: Number($("seed").value),
-    model: $("model").value,
     n: Number($("image-count").value),
   };
 
@@ -541,7 +540,6 @@ async function fetchEditedImage() {
   form.append("num_inference_steps", String(Number($("steps").value)));
   form.append("true_cfg_scale", String(Number($("true-cfg").value)));
   form.append("seed", String(Number($("seed").value)));
-  form.append("model", $("edit-model").value);
 
   const res = await fetch("/edit/image", {
     method: "POST",

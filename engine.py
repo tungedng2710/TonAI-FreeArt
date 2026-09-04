@@ -22,10 +22,14 @@ load_dotenv(BASE_DIR / ".env")
 GPU_ID = os.getenv("GPU_ID", "0")
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", GPU_ID)
 
-DEFAULT_MODEL_NAME = "Qwen/Qwen-Image-2512"
+DEFAULT_MODEL_NAME = os.getenv("VLLM_OMNI_MODEL_NAME", "").strip()
+if not DEFAULT_MODEL_NAME:
+    raise RuntimeError("VLLM_OMNI_MODEL_NAME must be configured in .env.")
 DEFAULT_MODEL_ID = DEFAULT_MODEL_NAME
-DEFAULT_EDIT_MODEL_NAME = "Qwen-Image-Edit"
-DEFAULT_EDIT_MODEL_ID = "Qwen/Qwen-Image-Edit"
+DEFAULT_EDIT_MODEL_NAME = os.getenv("VLLM_OMNI_EDIT_MODEL_NAME", "").strip()
+if not DEFAULT_EDIT_MODEL_NAME:
+    raise RuntimeError("VLLM_OMNI_EDIT_MODEL_NAME must be configured in .env.")
+DEFAULT_EDIT_MODEL_ID = DEFAULT_EDIT_MODEL_NAME
 MODEL_MAP = {DEFAULT_MODEL_NAME: DEFAULT_MODEL_ID}
 EDIT_MODEL_MAP = {DEFAULT_EDIT_MODEL_NAME: DEFAULT_EDIT_MODEL_ID}
 
