@@ -2,7 +2,7 @@
 
 A FastAPI image generation application using remote vLLM-Omni services for text-to-image generation and image editing.
 
-🚀 **[Try the Live Demo](https://7863--main--idp--tungn197.coder.vts-ai.space/)**
+🚀 **[Try the Live Demo](https://7863--main--frontier--idp-lab.coder.vts-ai.space)**
 
 ## Features
 
