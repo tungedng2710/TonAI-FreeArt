@@ -154,7 +154,9 @@ heightInput.addEventListener("change", normalizeTextInputs);
 
 function updateImageCountSlider() {
   const value = Number(imageCountInput.value);
-  const progress = ((value - 1) / 3) * 100;
+  const minimum = Number(imageCountInput.min);
+  const maximum = Number(imageCountInput.max);
+  const progress = ((value - minimum) / (maximum - minimum)) * 100;
   imageCountInput.style.setProperty("--range-progress", `${progress}%`);
   imageCountInput.setAttribute("aria-valuetext", `${value} ${value === 1 ? "image" : "images"}`);
   imageCountValue.value = String(value);

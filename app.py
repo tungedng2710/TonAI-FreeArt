@@ -41,7 +41,7 @@ class GenerateRequest(BaseModel):
     guidance_scale: float = Field(default=0.0, ge=0.0, le=20.0)
     seed: int = Field(default=42, description="Use -1 for random seed.")
     model: str = Field(default=DEFAULT_MODEL_NAME, description="Model to use")
-    n: int = Field(default=1, ge=1, le=4, description="Number of images to generate.")
+    n: int = Field(default=1, ge=1, le=2, description="Number of images to generate.")
 
 
 class GenerateResponse(BaseModel):

@@ -99,7 +99,7 @@ class ImageGenerationEngine:
         if not req.prompt or not req.prompt.strip():
             raise ValueError("Prompt is required.")
 
-        image_count = self._validate_image_count(req.n)
+        image_count = self._validate_image_count(req.n, maximum=2)
         seed = self._resolve_seed(req.seed)
         model_id = self.resolve_model_id(req.model)
         payload = {
@@ -185,10 +185,10 @@ class ImageGenerationEngine:
         return secrets.randbelow(2**31 - 1) if seed < 0 else seed
 
     @staticmethod
-    def _validate_image_count(image_count: int) -> int:
+    def _validate_image_count(image_count: int, maximum: int = 4) -> int:
         image_count = int(image_count)
-        if not 1 <= image_count <= 4:
-            raise ValueError("Image count must be between 1 and 4.")
+        if not 1 <= image_count <= maximum:
+            raise ValueError(f"Image count must be between 1 and {maximum}.")
         return image_count
 
     @staticmethod

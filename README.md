@@ -77,7 +77,7 @@ Request body:
   "guidance_scale": 0.0,
   "seed": 42,
   "model": "Qwen/Qwen-Image-2512",
-  "n": 4
+  "n": 2
 }
 ```
 
@@ -88,9 +88,7 @@ Response:
   "image_base64": "base64_encoded_image_data",
   "images_base64": [
     "base64_encoded_image_1",
-    "base64_encoded_image_2",
-    "base64_encoded_image_3",
-    "base64_encoded_image_4"
+    "base64_encoded_image_2"
   ],
   "mime_type": "image/png"
 }
@@ -131,7 +129,7 @@ Interactive API documentation is available at:
 - **guidance_scale**: Classifier-free guidance scale (0.0-20.0)
 - **seed**: Random seed for reproducibility (-1 for random)
 - **model**: Model identifier (default: `Qwen/Qwen-Image-2512`)
-- **n**: Number of images to generate in one request (1-4, default: 1)
+- **n**: Number of images to generate in one request (1-2, default: 1)
 
 ## Models
 
