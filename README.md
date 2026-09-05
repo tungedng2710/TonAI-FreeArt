@@ -4,6 +4,8 @@ A FastAPI image generation application using remote vLLM-Omni services for text-
 
 🚀 **[Try the Live Demo](https://tungedng2710.github.io/imagine/)**
 
+![TonAI Imagine web interface](static/demo.png)
+
 ## Features
 
 - **Remote Image Generation**: Powered by Qwen-Image through vLLM-Omni
