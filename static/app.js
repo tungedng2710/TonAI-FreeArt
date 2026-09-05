@@ -47,6 +47,30 @@ const textPromptExamples = [
     image: "/static/examples/asian-woman-neon.webp",
     prompt: "Photorealistic cinematic street-fashion portrait of a stylish young adult East Asian woman wearing layered charcoal tailoring, a translucent rain jacket and subtle silver accessories; rain-slick contemporary city lane at blue hour with abstract neon reflections and faint steam; natural facial features and skin texture, sharp dark bob haircut, self-assured expression; square dynamic chest-up composition, slightly off-center, shallow depth of field, fine 35mm film grain; cyan and warm amber reflections with restrained magenta accents; one adult subject only, no legible signs, text or logo.",
   },
+  {
+    title: "Future Vanguard",
+    category: "Futuristic",
+    image: "/static/examples/futuristic-fashion.webp",
+    prompt: "Cinematic futuristic fashion portrait of a stylish young adult East Asian woman wearing a sculptural pearl-white jacket with subtle luminous cyan seams; refined near-future transit atrium with curved glass, brushed titanium and floating ambient light; sleek dark hair, natural features and a calm confident expression; polished science-fiction concept art with realistic materials; square waist-up three-quarter composition with a clean silhouette; cool cyan edge light balanced by soft warm facial light; sophisticated pearl white, titanium silver, cyan and deep navy palette; one adult subject only, no text, logo, weapons or clutter.",
+  },
+  {
+    title: "Skyline Bloom",
+    category: "Anime",
+    image: "/static/examples/anime-city-garden.webp",
+    prompt: "Original anime-style portrait of a stylish young adult Asian woman wearing a contemporary cobalt jacket and pleated cream skirt in a quiet elevated city garden at sunset; flowering trees and distant modern towers; expressive dark eyes, short windswept dark hair and a relaxed confident pose; high-end Japanese-inspired anime illustration with crisp expressive linework, beautifully painted background and subtle cel shading; square three-quarter figure composition with a dynamic breeze; warm sunset rim light and cool sky shadows; cobalt, cream, coral and soft teal palette; no text, logo, school uniform or franchise characters.",
+  },
+  {
+    title: "Window Portrait",
+    category: "Ultra Realistic",
+    image: "/static/examples/ultra-realistic-portrait.webp",
+    prompt: "Ultra-realistic editorial photograph of a stylish young adult Korean woman in a minimal black silk blouse and understated silver earrings beside a large apartment window; soft linen curtain and neutral plaster wall; natural facial proportions, visible pores, fine hair strands, subtle makeup and a composed direct gaze; authentic medium-format photography with natural optical depth and restrained professional color grading; square close waist-up portrait with an 85mm lens look and shallow depth of field; soft north-window daylight with gentle shadow falloff; no plastic skin, excessive retouching, text or logo.",
+  },
+  {
+    title: "Terraced Dawn",
+    category: "Landscape",
+    image: "/static/examples/rice-terrace-sunrise.webp",
+    prompt: "Majestic photorealistic landscape photograph of layered emerald rice terraces flowing through misty mountains at sunrise; broad terraced valley, distant limestone peaks fading into morning haze, a narrow reflective stream and small clusters of native trees; square wide-angle view with sweeping terrace curves leading toward the mountains and strong foreground-to-background depth; first golden sunlight breaking through cool mist; tranquil emerald green, soft gold, mist blue and earthy brown palette; physically plausible terrain and light, no people, buildings, fantasy structures, text or logo, avoid oversaturation and HDR halos.",
+  },
 ];
 
 const MANUAL_MIN = 256;
