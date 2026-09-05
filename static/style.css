@@ -134,7 +134,7 @@ svg {
 }
 
 .topbar-inner {
-  width: 100%;
+  width: 95%;
   height: 64px;
   margin: 0 auto;
   padding: 0 20px;
@@ -222,7 +222,7 @@ svg {
 }
 
 .workspace {
-  width: 100%;
+  width: 95%;
   min-height: calc(100dvh - 116px);
   margin: 0 auto;
   padding: 20px 20px 14px;
@@ -1034,7 +1034,7 @@ input.image-count-range:focus-visible {
 }
 
 .footer {
-  width: 100%;
+  width: 95%;
   min-height: 38px;
   margin: 0 auto;
   padding: 0 20px 12px;
@@ -1099,7 +1099,7 @@ input.image-count-range:focus-visible {
   .topbar-inner,
   .workspace,
   .footer {
-    width: 100%;
+    width: 95%;
   }
 
   .workspace {
